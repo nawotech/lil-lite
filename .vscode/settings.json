@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "random": "cpp",
+        "kxtj3-1057 cpp": "c",
+        "optional": "cpp"
+    }
+}
