@@ -11,22 +11,35 @@
 #include "Wire.h"
 #include "kxtj3-1057.h"
 #include "power.h"
+#include "pattern.h"
 
 const uint8_t NUM_LEDS = 6;
+RTC_DATA_ATTR float bat_level_mAh = 200.0;
 
-RgbColor Red(255, 0, 0);
-RgbColor Purple(255, 0, 255);
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> Pixels(NUM_LEDS, LED_DATA_PIN);
-NeoPixelAnimator Anim(1);
+Pattern Ptrn(&Pixels);
 USBCDC USBSerial;
 Timer DebugTimer;
+Button Bttn(BUTTON_PIN, true);
+KXTJ3 Accel(0x0E); // Address pin GND
+Motion Mot(&Accel);
 VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
-Button Bttn(BUTTON_PIN, true);
-KXTJ3 Accel(0x0E); // Address pin GND
-Motion Move(&Accel);
 Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0); // 400mAh battery
+
+typedef enum
+{
+  USB_CONNECTED,
+  CHARGE,
+  CHARGE_DONE,
+  POWERING_ON,
+  ON,
+  POWERING_OFF,
+  OFF
+} light_state_t;
+
+light_state_t state = ON;
 
 static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -86,6 +99,8 @@ static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t eve
 
 void setup()
 {
+  Pwr.set_battery_level_mAh(bat_level_mAh); // restore battery capacity from last saved value (before sleeping)
+
   pinMode(BUTTON_PIN, INPUT);
   pinMode(VBUS_MONITOR_PIN, INPUT);
   pinMode(VBAT_MONITOR_PIN, INPUT);
@@ -100,10 +115,9 @@ void setup()
   digitalWrite(LIGHT_SENSOR_EN_PIN, 1);
 
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
-  Move.begin();
+  Mot.begin();
 
-  Pixels.Begin();
-  Pixels.Show();
+  Ptrn.begin();
 
   USB.onEvent(usbEventCallback);
   USBSerial.onEvent(usbEventCallback);
@@ -111,125 +125,89 @@ void setup()
   USB.begin();
 }
 
-void anim_fade_colors(const AnimationParam &param)
+void sleep()
 {
-  float progress = NeoEase::CubicInOut(param.progress);
-
-  RgbColor color = RgbColor::LinearBlend(Red, Purple, progress);
-
-  Pixels.ClearTo(color);
+  bat_level_mAh = Pwr.get_battery_level_mAh(); // backup battery level
+  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN);
+  esp_sleep_enable_ext1_wakeup(wake_pins, ESP_EXT1_WAKEUP_ANY_HIGH);
+  esp_deep_sleep_start();
 }
 
-bool forward = true;
-
-void anim_move(const AnimationParam &param)
+void pattern()
 {
-  float progress = NeoEase::CircularInOut(param.progress);
+  Mot.update();
+  motion_state_t mot_state = Mot.get_state();
 
-  uint8_t led_n;
-
-  if (forward)
+  // motion state changed
+  switch (mot_state)
   {
-    led_n = progress * NUM_LEDS;
-  }
-  else
-  {
-    led_n = (1.0 - progress) * NUM_LEDS;
-  }
+  case MOTION_STOPPED:
+    Ptrn.start(PATTERN_STOPPED);
+    break;
 
-  Pixels.ClearTo(0);
-  Pixels.SetPixelColor(led_n, Red);
+  case MOTION_START_MOVING:
+    break;
+
+  case MOTION_MOVING:
+    Ptrn.start(PATTERN_MOVE);
+    break;
+
+  case MOTION_BRAKING:
+    break;
+
+  case MOTION_PARKED:
+    break;
+  }
 }
 
 void loop()
 {
-  if (DebugTimer.time_passed(1000))
-  {
-    // USBSerial.println(Vbus.get_mV());
-
-    Move.update();
-
-    // USBSerial.println(Move.get_state());
-
-    Pwr.update();
-
-    power_state_t pwr_state = Pwr.get_state();
-    switch (pwr_state)
-    {
-    case USB_POWER:
-      USBSerial.println("USB POWER");
-      break;
-
-    case CHARGING:
-      USBSerial.println("CHARGING");
-      USBSerial.println(Pwr.get_battery_percent());
-      break;
-
-    case BATTERY_POWER:
-      USBSerial.println("BATTERY_POWER");
-      USBSerial.println(Pwr.get_battery_percent());
-      break;
-
-    case LOW_BATTERY:
-      USBSerial.println("LOW_BATTERY");
-      break;
-    }
-  }
-
-  button_state_t but_state = Bttn.get_state();
-  if (but_state == BUTTON_SHORT_PRESS)
-  {
-    USBSerial.println("Short press");
-  }
-  else if (but_state == BUTTON_LONG_HOLD_START)
-  {
-    USBSerial.println("Long hold start");
-  }
-  else if (but_state == BUTTON_LONG_HOLD_END)
-  {
-    USBSerial.println("Long hold end");
-  }
-
+  Ptrn.update();
+  Pwr.update();
   Bttn.update();
 
-  if (Anim.IsAnimating())
+  light_state_t new_state = state;
+
+  if (Bttn.get_state() == BUTTON_LONG_HOLD_END)
   {
-    Anim.UpdateAnimations();
-    Pixels.Show();
+    new_state = OFF;
   }
-  else
+
+  switch (state)
   {
+  case POWERING_ON:
+    break;
+
+  case ON:
     if (Pwr.get_state() == CHARGING)
     {
-      uint8_t bat_lvl = Pwr.get_battery_percent();
-      Pixels.ClearTo(0);
-      Pixels.SetPixelColor(0, Purple);
-      if (bat_lvl > 20)
-      {
-        Pixels.SetPixelColor(1, Purple);
-      }
-      if (bat_lvl > 40)
-      {
-        Pixels.SetPixelColor(2, Purple);
-      }
-      if (bat_lvl > 60)
-      {
-        Pixels.SetPixelColor(3, Purple);
-      }
-      if (bat_lvl > 80)
-      {
-        Pixels.SetPixelColor(4, Purple);
-      }
-      if (bat_lvl > 95)
-      {
-        Pixels.SetPixelColor(5, Purple);
-      }
-      Pixels.Show();
+      new_state = CHARGE;
     }
-    else if (Move.get_state() == MOTION_MOVING)
+    pattern();
+    break;
+
+  case POWERING_OFF:
+    break;
+
+  case OFF:
+    sleep();
+    break;
+
+  case CHARGE:
+    Ptrn.set_battery_gauge_percent(Pwr.get_battery_percent());
+    if (Pwr.get_state() == BATTERY_POWER)
     {
-      forward = !forward;
-      Anim.StartAnimation(0, 300, anim_fade_colors);
+      new_state = ON;
     }
+    break;
+  }
+
+  if (new_state != state)
+  {
+    if (new_state == CHARGE)
+    {
+      Ptrn.start(PATTERN_CHARGE);
+    }
+    state = new_state;
   }
 }

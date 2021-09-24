@@ -153,3 +153,12 @@ void Power::set_battery_load_current(float mA)
     _Tmr_load.reset();
     _load_mA = mA;
 }
+
+float Power::get_battery_level_mAh()
+{
+    return _bat_mAh;
+}
+void Power::set_battery_level_mAh(float mAh)
+{
+    _bat_mAh = mAh;
+}

@@ -23,6 +23,9 @@ public:
     uint8_t get_battery_percent();
     void set_battery_load_current(float mA);
 
+    float get_battery_level_mAh();
+    void set_battery_level_mAh(float mAh);
+
     Timer _Tmr_load;
 
 private:
