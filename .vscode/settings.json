@@ -5,6 +5,7 @@
         "string_view": "cpp",
         "random": "cpp",
         "kxtj3-1057 cpp": "c",
-        "optional": "cpp"
+        "optional": "cpp",
+        "functional": "cpp"
     }
 }

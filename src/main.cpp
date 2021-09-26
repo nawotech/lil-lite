@@ -11,13 +11,16 @@
 #include "Wire.h"
 #include "kxtj3-1057.h"
 #include "power.h"
-#include "pattern.h"
+#include "patman.h"
+
+#include "flash.h"
+#include "fade.h"
+#include "charge.h"
 
 const uint8_t NUM_LEDS = 6;
-RTC_DATA_ATTR float bat_level_mAh = 200.0;
+RTC_DATA_ATTR float bat_level_mAh = 300.0;
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> Pixels(NUM_LEDS, LED_DATA_PIN);
-Pattern Ptrn(&Pixels);
+Patman Patterns(NUM_LEDS, LED_DATA_PIN);
 USBCDC USBSerial;
 Timer DebugTimer;
 Button Bttn(BUTTON_PIN, true);
@@ -27,6 +30,13 @@ VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
 Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0); // 400mAh battery
+
+RgbColor Red(255, 0, 0);
+RgbColor Yellow(235, 25, 0);
+
+Flash FlashRed(&Patterns, Red);
+Fade FadeAmber(&Patterns, Yellow);
+Charge ChargeProgress(&Patterns, &Pwr);
 
 typedef enum
 {
@@ -117,7 +127,7 @@ void setup()
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
   Mot.begin();
 
-  Ptrn.begin();
+  Patterns.begin();
 
   USB.onEvent(usbEventCallback);
   USBSerial.onEvent(usbEventCallback);
@@ -128,7 +138,7 @@ void setup()
 void sleep()
 {
   bat_level_mAh = Pwr.get_battery_level_mAh(); // backup battery level
-  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN);
+  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN || 1 << BUTTON_PIN);
   esp_sleep_enable_ext1_wakeup(wake_pins, ESP_EXT1_WAKEUP_ANY_HIGH);
   esp_deep_sleep_start();
 }
@@ -142,14 +152,14 @@ void pattern()
   switch (mot_state)
   {
   case MOTION_STOPPED:
-    Ptrn.start(PATTERN_STOPPED);
+    Patterns.set_pattern(&FadeAmber);
     break;
 
   case MOTION_START_MOVING:
     break;
 
   case MOTION_MOVING:
-    Ptrn.start(PATTERN_MOVE);
+    Patterns.set_pattern(&FlashRed);
     break;
 
   case MOTION_BRAKING:
@@ -162,7 +172,7 @@ void pattern()
 
 void loop()
 {
-  Ptrn.update();
+  Patterns.update();
   Pwr.update();
   Bttn.update();
 
@@ -194,10 +204,9 @@ void loop()
     break;
 
   case CHARGE:
-    Ptrn.set_battery_gauge_percent(Pwr.get_battery_percent());
     if (Pwr.get_state() == BATTERY_POWER)
     {
-      new_state = ON;
+      new_state = OFF;
     }
     break;
   }
@@ -206,8 +215,9 @@ void loop()
   {
     if (new_state == CHARGE)
     {
-      Ptrn.start(PATTERN_CHARGE);
+      Patterns.set_pattern(&ChargeProgress);
     }
+
     state = new_state;
   }
 }
