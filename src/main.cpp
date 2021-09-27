@@ -133,12 +133,27 @@ void setup()
   USBSerial.onEvent(usbEventCallback);
   USBSerial.begin(115200);
   USB.begin();
+
+  Serial.begin(9600);
 }
 
 void sleep()
 {
+  int i;
+  for (i = 0; i < 100; i++) // wait for VBUS to go low before sleeping
+  {
+    if (Vbus.get_mV() < 1000)
+    {
+      break;
+    }
+    delay(50);
+  }
+  if (i > 99)
+  {
+    return; // if vbus fails to go low, do not sleep
+  }
   bat_level_mAh = Pwr.get_battery_level_mAh(); // backup battery level
-  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN || 1 << BUTTON_PIN);
+  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN | 1 << BUTTON_PIN);
   esp_sleep_enable_ext1_wakeup(wake_pins, ESP_EXT1_WAKEUP_ANY_HIGH);
   esp_deep_sleep_start();
 }
@@ -166,6 +181,40 @@ void pattern()
     break;
 
   case MOTION_PARKED:
+    break;
+  }
+}
+
+void print_state()
+{
+  switch (state)
+  {
+  case USB_CONNECTED:
+    Serial.println("USB_CONNECTED");
+    break;
+
+  case CHARGE:
+    Serial.println("CHARGE");
+    break;
+
+  case CHARGE_DONE:
+    Serial.println("CHARGE_DONE");
+    break;
+
+  case POWERING_ON:
+    Serial.println(" POWERING_ON");
+    break;
+
+  case ON:
+    Serial.println("ON");
+    break;
+
+  case POWERING_OFF:
+    Serial.println("POWERING_OFF");
+    break;
+
+  case OFF:
+    Serial.println("OFF");
     break;
   }
 }
@@ -201,6 +250,8 @@ void loop()
 
   case OFF:
     sleep();
+    // if sleep returns, it failed, go back ON
+    new_state = ON;
     break;
 
   case CHARGE:
@@ -217,7 +268,7 @@ void loop()
     {
       Patterns.set_pattern(&ChargeProgress);
     }
-
     state = new_state;
+    print_state();
   }
 }
