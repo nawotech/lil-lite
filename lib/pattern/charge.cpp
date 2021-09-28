@@ -8,6 +8,7 @@ Charge::Charge(Patman *Pat, Power *Pwr)
 
 void Charge::start()
 {
+    _Pat->Pixels.ClearTo(0);
     RgbColor ChargeColorGreen(0, 20, 0);
     _color = ChargeColorGreen;
     _led_num = 0;

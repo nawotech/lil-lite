@@ -16,13 +16,14 @@
 #include "flash.h"
 #include "fade.h"
 #include "charge.h"
+#include "power_on.h"
 
 const uint8_t NUM_LEDS = 6;
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
 
 Patman Patterns(NUM_LEDS, LED_DATA_PIN);
 USBCDC USBSerial;
-Timer DebugTimer;
+Timer LightTimer;
 Button Bttn(BUTTON_PIN, true);
 KXTJ3 Accel(0x0E); // Address pin GND
 Motion Mot(&Accel);
@@ -33,10 +34,13 @@ Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0); // 400mAh battery
 
 RgbColor Red(255, 0, 0);
 RgbColor Yellow(235, 25, 0);
+RgbColor Green(0, 30, 0);
 
 Flash FlashRed(&Patterns, Red);
 Fade FadeAmber(&Patterns, Yellow);
+Fade FadeGreen(&Patterns, Green);
 Charge ChargeProgress(&Patterns, &Pwr);
+PowerOn PoweringOn(&Patterns);
 
 typedef enum
 {
@@ -49,7 +53,7 @@ typedef enum
   OFF
 } light_state_t;
 
-light_state_t state = ON;
+light_state_t state;
 
 static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -135,6 +139,9 @@ void setup()
   USB.begin();
 
   Serial.begin(9600);
+
+  Patterns.set_pattern(&PoweringOn);
+  state = POWERING_ON;
 }
 
 void sleep()
@@ -235,12 +242,20 @@ void loop()
   switch (state)
   {
   case POWERING_ON:
+    if (!Patterns.Anim.IsAnimating())
+    {
+      new_state = ON;
+    }
     break;
 
   case ON:
     if (Pwr.get_state() == CHARGING)
     {
       new_state = CHARGE;
+    }
+    else if (Pwr.get_state() == USB_POWER)
+    {
+      new_state = CHARGE_DONE;
     }
     pattern();
     break;
@@ -259,6 +274,21 @@ void loop()
     {
       new_state = OFF;
     }
+    else if (Pwr.get_state() == USB_POWER)
+    {
+      new_state = CHARGE_DONE;
+    }
+    break;
+
+  case CHARGE_DONE:
+    if (Pwr.get_state() == BATTERY_POWER)
+    {
+      new_state = OFF;
+    }
+    else if (Pwr.get_state() == CHARGING)
+    {
+      new_state = CHARGE;
+    }
     break;
   }
 
@@ -268,6 +298,12 @@ void loop()
     {
       Patterns.set_pattern(&ChargeProgress);
     }
+
+    if (new_state == CHARGE_DONE)
+    {
+      Patterns.set_pattern(&FadeGreen);
+    }
+
     state = new_state;
     print_state();
   }
