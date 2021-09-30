@@ -22,6 +22,7 @@ public:
     power_state_t get_state();
     uint8_t get_battery_percent();
     void set_battery_load_current(float mA);
+    bool is_usb_connected();
 
     float get_battery_level_mAh();
     void set_battery_level_mAh(float mAh);
@@ -29,7 +30,6 @@ public:
     Timer _Tmr_load;
 
 private:
-    bool is_usb_connected();
     bool is_charging();
     bool is_low_battery();
     void update_battery_cap();

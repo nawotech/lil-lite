@@ -8,7 +8,7 @@ PowerOff::PowerOff(Patman *Pat)
 
 void PowerOff::start()
 {
-    _Pat->Anim.StartAnimation(0, 3000, std::bind(&PowerOff::update_function, this, std::placeholders::_1));
+    _Pat->Anim.StartAnimation(0, 1500, std::bind(&PowerOff::update_function, this, std::placeholders::_1));
 }
 
 void PowerOff::update_function(const AnimationParam &param)
@@ -21,9 +21,7 @@ void PowerOff::update_function(const AnimationParam &param)
     // float progress = NeoEase::ExponentialOut(param.progress);
     float progress = 1.0 - param.progress;
 
-    // animate LEDs out from center
     // todo handle odd n of leds
-    // leds to light
     uint16_t z = _Pat->Pixels.PixelCount() / 2;
     uint16_t n = progress * z;
 
