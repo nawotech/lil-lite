@@ -7,6 +7,7 @@ class VoltageMonitor
 {
 public:
     VoltageMonitor(uint8_t pin, float scale);
+    void begin();
     uint16_t get_mV();
 
 private:

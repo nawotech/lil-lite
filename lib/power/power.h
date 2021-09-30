@@ -19,6 +19,7 @@ class Power
 public:
     Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, float bat_capacity_mAh);
     void update();
+    void begin();
     power_state_t get_state();
     uint8_t get_battery_percent();
     void set_battery_load_current(float mA);

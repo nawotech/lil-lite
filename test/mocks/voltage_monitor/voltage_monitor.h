@@ -7,6 +7,7 @@ class VoltageMonitor
 {
 public:
     uint16_t get_mV();
+    void begin();
 
     void MOCK_get_mV(uint16_t mV);
 

@@ -9,3 +9,8 @@ void VoltageMonitor::MOCK_get_mV(uint16_t mV)
 {
     _MOCK_mV = mV;
 }
+
+void VoltageMonitor::begin()
+{
+    return;
+}

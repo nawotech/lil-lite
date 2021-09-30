@@ -34,3 +34,8 @@ void Patman::blank_leds()
     Pixels.ClearTo(0);
     Pixels.Show();
 }
+
+bool Patman::is_running()
+{
+    return Anim.IsAnimating();
+}

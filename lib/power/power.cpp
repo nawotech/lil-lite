@@ -9,6 +9,14 @@ Power::Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_
     _bat_cap_mAh = bat_capacity_mAh;
 }
 
+void Power::begin()
+{
+    pinMode(_charge_stat_pin, INPUT);
+    _Vbus->begin();
+    _Vbat->begin();
+    _Icharge->begin();
+}
+
 bool Power::is_usb_connected()
 {
     uint16_t mv_vbus = _Vbus->get_mV();
@@ -145,13 +153,16 @@ uint8_t Power::get_battery_percent()
 
 void Power::set_battery_load_current(float mA)
 {
-    if (_state == BATTERY_POWER)
+    if (mA != _load_mA)
     {
-        update_battery_cap();
-    }
+        if (_state == BATTERY_POWER)
+        {
+            update_battery_cap();
+        }
 
-    _Tmr_load.reset();
-    _load_mA = mA;
+        _Tmr_load.reset();
+        _load_mA = mA;
+    }
 }
 
 float Power::get_battery_level_mAh()
