@@ -27,3 +27,10 @@ void Patman::set_pattern(Pattern *pattern)
         _current_pattern->start();
     }
 }
+
+void Patman::blank_leds()
+{
+    Anim.StopAll();
+    Pixels.ClearTo(0);
+    Pixels.Show();
+}

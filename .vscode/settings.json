@@ -6,6 +6,7 @@
         "random": "cpp",
         "kxtj3-1057 cpp": "c",
         "optional": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "*.tcc": "cpp"
     }
 }

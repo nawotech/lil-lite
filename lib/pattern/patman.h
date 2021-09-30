@@ -20,6 +20,7 @@ public:
     void begin();
     void update();
     void set_pattern(Pattern *pattern);
+    void blank_leds();
 
     NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> Pixels;
     NeoPixelAnimator Anim;

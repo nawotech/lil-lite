@@ -30,6 +30,10 @@ void Motion::update()
             // movement detected, this means movement started
             _current_state = MOTION_MOVING;
         }
+        else if (_Tmr.time_passed(30000))
+        {
+            _current_state = MOTION_PARKED;
+        }
         break;
 
     case MOTION_START_MOVING:
@@ -40,6 +44,7 @@ void Motion::update()
         {
             // no activity counter expired, this means movement stopped
             _current_state = MOTION_STOPPED;
+            _Tmr.reset();
         }
         break;
 
@@ -47,6 +52,11 @@ void Motion::update()
         break; // todo add braking state
 
     case MOTION_PARKED:
-        break; // todo add state
+        if (_Accel->isMotionInt())
+        {
+            // movement detected, this means movement started
+            _current_state = MOTION_MOVING;
+        }
+        break;
     }
 }

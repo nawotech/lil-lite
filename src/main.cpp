@@ -12,11 +12,16 @@
 #include "kxtj3-1057.h"
 #include "power.h"
 #include "patman.h"
+#include "light_sensor.h"
 
 #include "flash.h"
 #include "fade.h"
 #include "charge.h"
 #include "power_on.h"
+#include "battery_gauge.h"
+#include "power_off.h"
+
+#define CURRENT_IDLE_MA 27
 
 const uint8_t NUM_LEDS = 6;
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
@@ -30,7 +35,8 @@ Motion Mot(&Accel);
 VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
-Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0); // 400mAh battery
+Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0);               // 400mAh battery
+LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 1000); // night mV found by testing
 
 RgbColor Red(255, 0, 0);
 RgbColor Yellow(235, 25, 0);
@@ -41,6 +47,8 @@ Fade FadeAmber(&Patterns, Yellow);
 Fade FadeGreen(&Patterns, Green);
 Charge ChargeProgress(&Patterns, &Pwr);
 PowerOn PoweringOn(&Patterns);
+BatteryGauge BattGauge(&Patterns, &Pwr);
+PowerOff PoweringOff(&Patterns);
 
 typedef enum
 {
@@ -50,7 +58,9 @@ typedef enum
   POWERING_ON,
   ON,
   POWERING_OFF,
-  OFF
+  PARKED,
+  OFF,
+  BATTERY_GAUGE
 } light_state_t;
 
 light_state_t state;
@@ -113,20 +123,20 @@ static void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t eve
 
 void setup()
 {
+  LightSens.begin(); // light sensor takes ~100ms to be ready to read after starting
+  analog_setup();
+
   Pwr.set_battery_level_mAh(bat_level_mAh); // restore battery capacity from last saved value (before sleeping)
+  Pwr.set_battery_load_current(CURRENT_IDLE_MA);
 
   pinMode(BUTTON_PIN, INPUT);
   pinMode(VBUS_MONITOR_PIN, INPUT);
   pinMode(VBAT_MONITOR_PIN, INPUT);
   pinMode(CHARGE_STATUS_PIN, INPUT);
   pinMode(CHARGE_I_PIN, INPUT);
-  pinMode(LIGHT_SENSOR_EN_PIN, OUTPUT);
-  pinMode(LIGHT_SENSOR_READ_PIN, INPUT);
   pinMode(SW_EN_PIN, OUTPUT);
 
-  analog_setup();
   digitalWrite(SW_EN_PIN, 1);
-  digitalWrite(LIGHT_SENSOR_EN_PIN, 1);
 
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
   Mot.begin();
@@ -138,18 +148,17 @@ void setup()
   USBSerial.begin(115200);
   USB.begin();
 
-  Serial.begin(9600);
-
   Patterns.set_pattern(&PoweringOn);
   state = POWERING_ON;
 }
 
-void sleep()
+void sleep(bool motion_wake)
 {
+  Patterns.blank_leds();
   int i;
-  for (i = 0; i < 100; i++) // wait for VBUS to go low before sleeping
+  for (i = 0; i < 100; i++) // wait for VBUS and button to go low before sleeping
   {
-    if (Vbus.get_mV() < 1000)
+    if (Vbus.get_mV() < 1000 && !Bttn.is_pressed())
     {
       break;
     }
@@ -161,20 +170,29 @@ void sleep()
   }
   bat_level_mAh = Pwr.get_battery_level_mAh(); // backup battery level
   uint64_t wake_pins = (1 << VBUS_MONITOR_PIN | 1 << BUTTON_PIN);
+  if (motion_wake)
+  {
+    wake_pins |= 1 << ACCEL_INTERRUPT_PIN;
+  }
   esp_sleep_enable_ext1_wakeup(wake_pins, ESP_EXT1_WAKEUP_ANY_HIGH);
   esp_deep_sleep_start();
 }
 
+motion_state_t mot_state = MOTION_PARKED;
+
 void pattern()
 {
   Mot.update();
-  motion_state_t mot_state = Mot.get_state();
+  motion_state_t new_mot_state = Mot.get_state();
 
   // motion state changed
-  switch (mot_state)
+  if (new_mot_state != mot_state)
+  {
+    switch (new_mot_state)
   {
   case MOTION_STOPPED:
     Patterns.set_pattern(&FadeAmber);
+      Pwr.set_battery_load_current(CURRENT_IDLE_MA + 25);
     break;
 
   case MOTION_START_MOVING:
@@ -182,6 +200,8 @@ void pattern()
 
   case MOTION_MOVING:
     Patterns.set_pattern(&FlashRed);
+      Pwr.set_battery_load_current(CURRENT_IDLE_MA + 16);
+
     break;
 
   case MOTION_BRAKING:
@@ -190,6 +210,8 @@ void pattern()
   case MOTION_PARKED:
     break;
   }
+    mot_state = new_mot_state;
+  }
 }
 
 void print_state()
@@ -197,31 +219,31 @@ void print_state()
   switch (state)
   {
   case USB_CONNECTED:
-    Serial.println("USB_CONNECTED");
+    // Serial.println("USB_CONNECTED");
     break;
 
   case CHARGE:
-    Serial.println("CHARGE");
+    // Serial.println("CHARGE");
     break;
 
   case CHARGE_DONE:
-    Serial.println("CHARGE_DONE");
+    // Serial.println("CHARGE_DONE");
     break;
 
   case POWERING_ON:
-    Serial.println(" POWERING_ON");
+    // Serial.println(" POWERING_ON");
     break;
 
   case ON:
-    Serial.println("ON");
+    // Serial.println("ON");
     break;
 
   case POWERING_OFF:
-    Serial.println("POWERING_OFF");
+    // Serial.println("POWERING_OFF");
     break;
 
   case OFF:
-    Serial.println("OFF");
+    // Serial.println("OFF");
     break;
   }
 }
@@ -234,9 +256,12 @@ void loop()
 
   light_state_t new_state = state;
 
-  if (Bttn.get_state() == BUTTON_LONG_HOLD_END)
+  button_state_t bttn_state = Bttn.get_state();
+
+  if (bttn_state == BUTTON_LONG_HOLD_START)
   {
-    new_state = OFF;
+    Patterns.set_pattern(&PoweringOff);
+    new_state = POWERING_OFF;
   }
 
   switch (state)
@@ -244,11 +269,23 @@ void loop()
   case POWERING_ON:
     if (!Patterns.Anim.IsAnimating())
     {
+      if (Pwr.get_state() == BATTERY_POWER)
+      {
+        new_state = BATTERY_GAUGE;
+      }
+      else
+      {
       new_state = ON;
+      }
     }
     break;
 
   case ON:
+    if (bttn_state == BUTTON_SHORT_PRESS)
+    {
+      new_state = BATTERY_GAUGE;
+      break;
+    }
     if (Pwr.get_state() == CHARGING)
     {
       new_state = CHARGE;
@@ -257,14 +294,21 @@ void loop()
     {
       new_state = CHARGE_DONE;
     }
+    else if (Mot.get_state() == MOTION_PARKED)
+    {
+      new_state = PARKED;
+    }
     pattern();
     break;
 
-  case POWERING_OFF:
+  case OFF:
+    sleep(false); // do not wake up on motion, only charging or button
+    // if sleep returns, it failed, go back ON
+    new_state = ON;
     break;
 
-  case OFF:
-    sleep();
+  case PARKED:
+    sleep(true); // wake up on motion when parked
     // if sleep returns, it failed, go back ON
     new_state = ON;
     break;
@@ -290,21 +334,58 @@ void loop()
       new_state = CHARGE;
     }
     break;
+
+  case BATTERY_GAUGE:
+    if (!Patterns.Anim.IsAnimating())
+    {
+      new_state = ON;
+      mot_state = MOTION_START_MOVING;
+    }
+    break;
+
+  case POWERING_OFF:
+    if (!Patterns.Anim.IsAnimating())
+    {
+      new_state = OFF;
+    }
+    if (!Bttn.is_pressed())
+    {
+      new_state = ON;
+      mot_state = MOTION_START_MOVING;
+    }
+    break;
   }
 
   if (new_state != state)
   {
     if (new_state == CHARGE)
     {
-      Patterns.set_pattern(&ChargeProgress);
+      // Patterns.set_pattern(&ChargeProgress);
+      Patterns.blank_leds();
+      Pwr.set_battery_load_current(CURRENT_IDLE_MA);
     }
 
     if (new_state == CHARGE_DONE)
     {
       Patterns.set_pattern(&FadeGreen);
+      Pwr.set_battery_load_current(CURRENT_IDLE_MA);
+    }
+
+    if (new_state == BATTERY_GAUGE)
+    {
+      Patterns.set_pattern(&BattGauge);
     }
 
     state = new_state;
     print_state();
+  }
+
+  if (LightTimer.time_passed(10000))
+  {
+    // test turning on the light sensor and then taking a reading
+    LightSens.enable();
+    delay(10);
+    USBSerial.println(LightSens.read_mV());
+    LightSens.disable();
   }
 }

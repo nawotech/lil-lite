@@ -8,24 +8,12 @@ Flash::Flash(Patman *Pat, RgbColor color)
 
 void Flash::start()
 {
-    _count = 0;
     re_start();
 }
 
 void Flash::re_start()
 {
-    uint16_t speed;
-    if (_count > 5)
-    {
-        _count = 0;
-        speed = 750;
-    }
-    else
-    {
-        speed = 250;
-    }
-    _Pat->Anim.StartAnimation(0, speed, std::bind(&Flash::update_function, this, std::placeholders::_1));
-    _count++;
+    _Pat->Anim.StartAnimation(0, 300, std::bind(&Flash::update_function, this, std::placeholders::_1));
 }
 
 void Flash::update_function(const AnimationParam &param)

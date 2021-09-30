@@ -1,18 +1,17 @@
-#ifndef FLASH_H
-#define FLASH_H
+#ifndef POWER_OFF_H
+#define POWER_OFF_H
 
 #include "patman.h"
 
-class Flash : public Pattern
+class PowerOff : public Pattern
 {
 public:
-    Flash(Patman *Pat, RgbColor color);
+    PowerOff(Patman *Pat);
     void start();
 
 private:
     void update_function(const AnimationParam &param);
     RgbColor _color;
-    void re_start();
     Patman *_Pat;
 };
 
