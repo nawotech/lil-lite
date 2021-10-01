@@ -24,7 +24,9 @@
 #define CURRENT_IDLE_MA 27
 
 const uint8_t NUM_LEDS = 6;
+
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
+RTC_DATA_ATTR light_state_t light_state = POWERING_ON;
 
 Patman Patterns(NUM_LEDS, LED_DATA_PIN);
 
@@ -68,7 +70,7 @@ Light LilLite(&LightSens,
               &FlashRed,
               &FadeAmber);
 
-void sleep(bool motion_wake);
+void esp_sleep(bool motion_wake, bool tinmer_wake);
 
 void setup()
 {
@@ -78,12 +80,21 @@ void setup()
   Pwr.set_battery_level_mAh(bat_level_mAh); // restore battery capacity from last saved value
   // Pwr.set_battery_load_current(CURRENT_IDLE_MA);
 
-  LilLite.begin();
+  LilLite.begin(light_state);
+
+  light_state_t start_state = LilLite.get_state();
+
+  if (start_state == DAY_RIDING)
+  {
+    esp_sleep(false, true);
+  }
+  else if (start_state == PARKED)
+  {
+    esp_sleep(true, false);
+  }
 
   USBSerial.begin(115200);
   USB.begin();
-
-  Serial.begin(9600);
 }
 
 light_state_t old_state = POWERING_ON;
@@ -96,21 +107,15 @@ void loop()
 
   if (state == OFF)
   {
-    sleep(false);
+    esp_sleep(false, false);
   }
   else if (state == PARKED)
   {
-    sleep(true);
-  }
-
-  if (state != old_state)
-  {
-    Serial.println(state);
-    old_state = state;
+    esp_sleep(true, false);
   }
 }
 
-void sleep(bool motion_wake)
+void esp_sleep(bool motion_wake, bool timer_wake)
 {
   int i;
   for (i = 0; i < 100; i++) // wait for VBUS and button to go low before sleeping
@@ -131,6 +136,11 @@ void sleep(bool motion_wake)
   {
     wake_pins |= 1 << ACCEL_INTERRUPT_PIN;
   }
+  light_state = LilLite.get_state();
   esp_sleep_enable_ext1_wakeup(wake_pins, ESP_EXT1_WAKEUP_ANY_HIGH);
+  if (timer_wake)
+  {
+    esp_sleep_enable_timer_wakeup(1000000 * 15); // 15 seconds
+  }
   esp_deep_sleep_start();
 }

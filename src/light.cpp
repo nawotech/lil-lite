@@ -29,18 +29,40 @@ Light::Light(LightSensor *LightSens, Patman *Pttrns, Motion *Mot, Button *Bttn, 
 
 void Light::begin(light_state_t inital_state)
 {
-    pinMode(_sw_en_pin, OUTPUT);
-    digitalWrite(_sw_en_pin, 1);
-
     _LightSensor->begin();
     _Button->begin();
     _Power->begin();
     _Motion->begin();
 
+    if (inital_state == PARKED)
+    {
+        if (!_Button->is_pressed() && !_Power->is_usb_connected())
+        {
+            delay(100);
+            if (!_LightSensor->check_is_night())
+            {
+                // day time
+                _state = DAY_RIDING;
+                return;
+            }
+        }
+    }
+    else if (inital_state == DAY_RIDING)
+    {
+        if (!_Button->is_pressed() && !_Power->is_usb_connected())
+        {
+            _state = PARKED;
+            return;
+        }
+    }
+
+    pinMode(_sw_en_pin, OUTPUT);
+    digitalWrite(_sw_en_pin, 1);
+    delay(100);
     _Patterns->begin();
 
-    _state = (light_state_t)(inital_state + 1); // force different state so it is update at first run
-    set_state(inital_state);
+    _state = inital_state; // force different state so it is update at first run
+    set_state(POWERING_ON);
 }
 
 void Light::set_state(light_state_t new_state)
@@ -165,7 +187,6 @@ void Light::update()
         break;
 
     case DAY_RIDING:
-        // todo write code
         break;
     }
 }
