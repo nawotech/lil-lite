@@ -27,7 +27,7 @@ public:
     NeoPixelAnimator Anim;
 
 private:
-    Pattern *_current_pattern;
+    Pattern *_current_pattern = 0;
 };
 
 #endif
