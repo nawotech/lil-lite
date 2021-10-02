@@ -80,29 +80,68 @@ bool Power::is_low_battery()
 
 void Power::update()
 {
-    power_state_t new_state;
+    power_state_t new_state = _state;
 
-    if (is_usb_connected())
+    bool usb_connected = is_usb_connected();
+    bool charging = is_charging();
+    bool low_battery = is_low_battery();
+
+    switch (_state)
     {
-        if (is_charging())
+    case BATTERY_POWER:
+        if (usb_connected)
         {
             new_state = CHARGING;
         }
-        else
-        {
-            new_state = USB_POWER;
-        }
-    }
-    else
-    {
-        if (is_low_battery())
+        else if (low_battery)
         {
             new_state = LOW_BATTERY;
         }
-        else
+        break;
+
+    case CHARGING:
+        if (!usb_connected)
         {
             new_state = BATTERY_POWER;
         }
+        if (!charging)
+        {
+            if (_charge_stopped)
+            {
+                if (_Tmr_VBUS.time_passed(100))
+                {
+                    new_state = USB_POWER;
+                }
+            }
+            else
+            {
+                _charge_stopped = true;
+                _Tmr_VBUS.reset();
+            }
+        }
+        else if (_Tmr_load.get_ms() >= 30000) // update charge every 30 sec
+        {
+            update_battery_charge();
+        }
+        break;
+
+    case USB_POWER:
+        if (!usb_connected)
+        {
+            new_state = BATTERY_POWER;
+        }
+        if (charging)
+        {
+            new_state = CHARGING;
+        }
+        break;
+
+    case LOW_BATTERY:
+        if (usb_connected)
+        {
+            new_state = CHARGING;
+        }
+        break;
     }
 
     if (new_state != _state) // if state has changed
@@ -111,29 +150,24 @@ void Power::update()
         {
             _bat_mAh = _bat_cap_mAh; // reset the charge to 100%
         }
-        else if (_state == BATTERY_POWER && new_state == LOW_BATTERY) // if we hit low battery voltage
+        if (new_state == LOW_BATTERY) // if we hit low battery voltage
         {
             _bat_mAh = 0.0; // reset charge to 0%
         }
-        else if (_state == BATTERY_POWER) // leaving battery power state
+        if (_state == BATTERY_POWER) // leaving battery power state
         {
             update_battery_cap();
         }
-        else if (_state == CHARGING)
+        if (_state == CHARGING) // leaving charging state
         {
             _Tmr_load.reset();
             _charge_mA = 0.0;
         }
-    }
-
-    _state = new_state;
-
-    if (_state == CHARGING)
-    {
-        if (_Tmr_load.get_ms() >= 30000) // update charge every 30 sec
+        if (new_state == CHARGING) // entering charging state
         {
-            update_battery_charge();
+            _charge_stopped = false;
         }
+        _state = new_state;
     }
 }
 

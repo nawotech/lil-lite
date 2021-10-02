@@ -29,6 +29,7 @@ public:
     void set_battery_level_mAh(float mAh);
 
     Timer _Tmr_load;
+    Timer _Tmr_VBUS; // keep public for unit testing mocks
 
 private:
     bool is_charging();
@@ -47,6 +48,7 @@ private:
     float _charge_mA = 0.0;
     float _bat_mAh;
     float _load_mA;
+    bool _charge_stopped = false;
 };
 
 #endif

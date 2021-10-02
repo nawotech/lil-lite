@@ -10,6 +10,7 @@ using namespace fakeit;
 
 void test_states(void)
 {
+
     VoltageMonitor Vbus;
     VoltageMonitor Vbat;
     VoltageMonitor Ichrg;
@@ -23,9 +24,27 @@ void test_states(void)
     TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus > 5000 and charge stat = 0");
 
     Vbus.MOCK_get_mV(5000);
+    Pwr._Tmr_VBUS.MOCK_time_passed(50);
     When(Method(ArduinoFake(), digitalRead)).Return(1);
     Pwr.update();
-    TEST_ASSERT_EQUAL_INT_MESSAGE(USB_POWER, Pwr.get_state(), "state = USB_POWER when vbus > 5000 and charge stat = 1");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus > 5000 for less than 100ms and charge stat = 1");
+
+    Vbus.MOCK_get_mV(5000);
+    Pwr._Tmr_VBUS.MOCK_time_passed(150);
+    When(Method(ArduinoFake(), digitalRead)).Return(1);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(USB_POWER, Pwr.get_state(), "state = USB_POWER when vbus > 5000 for greater than 100ms and charge stat = 1");
+
+    Vbus.MOCK_get_mV(5000);
+    When(Method(ArduinoFake(), digitalRead)).Return(0);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus > 5000 and charge stat = 0");
+
+    Vbus.MOCK_get_mV(5000);
+    Pwr._Tmr_VBUS.MOCK_time_passed(50);
+    When(Method(ArduinoFake(), digitalRead)).Return(1);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus > 5000 for less than 100ms and charge stat = 1");
 
     Vbus.MOCK_get_mV(100);
     Vbat.MOCK_get_mV(3750);
@@ -55,10 +74,14 @@ void test_capacity(void)
     TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus > 5000 and charge stat = 0");
 
     // A. test battery reset to full when moving from CHARGING state to USB_POWER state (battery fully charged)
+
     Vbus.MOCK_get_mV(5000);
     When(Method(ArduinoFake(), digitalRead)).AlwaysReturn(1);
     Pwr.update();
-    TEST_ASSERT_EQUAL_INT_MESSAGE(USB_POWER, Pwr.get_state(), "state = USB_POWER when vbus > 5000 and charge stat = 1");
+
+    Pwr._Tmr_VBUS.MOCK_time_passed(150);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(USB_POWER, Pwr.get_state(), "state = USB_POWER when vbus > 5000 for greater than 100ms and charge stat = 1");
     TEST_ASSERT_EQUAL_UINT8_MESSAGE(100, Pwr.get_battery_percent(), "battery percent is 100 after charge complete");
 
     // B. test when not being powered by battery (state NOT BATTERY_POWER) the battery level stays constant
@@ -72,7 +95,7 @@ void test_capacity(void)
     // example- 30mA for 30 min, and then 100mA for 5 min, this is 23.33 mAh, 400 - 23.33 = ~6%
     Vbus.MOCK_get_mV(100);
     Vbat.MOCK_get_mV(3750);
-    When(Method(ArduinoFake(), digitalRead)).Return(1);
+    When(Method(ArduinoFake(), digitalRead)).AlwaysReturn(1);
     Pwr.update();
     TEST_ASSERT_EQUAL_INT_MESSAGE(BATTERY_POWER, Pwr.get_state(), "state = BATTERY_POWER when vbus disconnected and battery not low");
 
