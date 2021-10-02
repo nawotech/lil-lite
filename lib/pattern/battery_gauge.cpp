@@ -19,6 +19,10 @@ void BatteryGauge::start()
     {
         _bat_leds = 1;
     }
+    else if (batt_ratio > 0.92)
+    {
+        _bat_leds = num_leds;
+    }
 
     if (batt_ratio <= 0.1) // set color based on battery level
     {
