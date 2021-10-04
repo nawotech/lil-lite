@@ -21,6 +21,8 @@
 #include "battery_gauge.h"
 #include "power_off.h"
 
+#include "timer.h"
+
 const uint8_t NUM_LEDS = 6;
 
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
@@ -37,6 +39,8 @@ Patman Patterns(NUM_LEDS, LED_DATA_PIN, &Pwr);
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
 
 USBCDC USBSerial;
+
+Timer DebugTimer;
 
 // Colors
 RgbColor Red(255, 0, 0);
@@ -95,6 +99,7 @@ void setup()
 
   USBSerial.begin(115200);
   USB.begin();
+  Serial.begin(9600);
 }
 
 light_state_t old_state = POWERING_ON;
@@ -112,6 +117,11 @@ void loop()
   else if (state == PARKED)
   {
     esp_sleep(true, false);
+  }
+
+  if (DebugTimer.time_passed(1000))
+  {
+    Serial.println(Pwr.get_battery_level_mAh());
   }
 }
 

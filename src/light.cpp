@@ -86,6 +86,10 @@ void Light::set_state(light_state_t new_state)
         case OFF:
             _Patterns->blank_leds();
             break;
+
+        case PARKED:
+            _Patterns->blank_leds();
+            break;
         }
         _state = new_state;
     }
