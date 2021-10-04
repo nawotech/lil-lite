@@ -2,7 +2,7 @@
 The fun bike light with big potential
 
 ## Standard Patterns
-- [ ] Blink red
+- [X] Blink red
 - [ ] Bink pink
 - [ ] Bouncing ball change color
 - [ ] Grow flash red
