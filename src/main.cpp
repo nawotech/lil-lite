@@ -82,7 +82,6 @@ void setup()
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
 
   Pwr.set_battery_level_mAh(bat_level_mAh); // restore battery capacity from last saved value
-  // Pwr.set_battery_load_current(CURRENT_IDLE_MA);
 
   LilLite.begin(light_state);
 
