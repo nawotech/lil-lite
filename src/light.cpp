@@ -7,8 +7,9 @@ Light::Light(LightSensor *LightSens, Patman *Pttrns, Motion *Mot, Button *Bttn, 
              Pattern *Pat_Charging,
              Pattern *Pat_Charge_Done,
              Pattern *Pat_Battery_Level,
-             Pattern *Pat_Moving,
-             Pattern *Pat_Stopped)
+             Pattern *Pat_Stopped,
+             Pattern **Pats_Moving,
+             uint16_t num_pats_moving)
 {
     _LightSensor = LightSens;
     _Patterns = Pttrns;
@@ -23,8 +24,11 @@ Light::Light(LightSensor *LightSens, Patman *Pttrns, Motion *Mot, Button *Bttn, 
     _Pat_Charging = Pat_Charging;
     _Pat_Charge_Done = Pat_Charge_Done;
     _Pat_Battery_Level = Pat_Battery_Level;
-    _Pat_Moving = Pat_Moving;
+    _Pats_Moving = Pats_Moving;
     _Pat_Stopped = Pat_Stopped;
+    _num_pats_moving = num_pats_moving;
+
+    _current_pat_moving = 1;
 }
 
 void Light::begin(light_state_t inital_state)
@@ -90,7 +94,12 @@ void Light::set_state(light_state_t new_state)
         case PARKED:
             _Patterns->blank_leds();
             break;
+
+        case SELECTING_PATTERN:
+            _LightTmr.reset();
+            break;
         }
+
         _state = new_state;
     }
 }
@@ -125,6 +134,10 @@ void Light::update()
         {
             set_state(ON);
         }
+        else if (button_state == BUTTON_SHORT_PRESS)
+        {
+            set_state(SELECTING_PATTERN);
+        }
         break;
 
     case ON:
@@ -145,7 +158,7 @@ void Light::update()
             switch (motion_state)
             {
             case MOTION_MOVING:
-                _Patterns->set_pattern(_Pat_Moving);
+                _Patterns->set_pattern(_Pats_Moving[_current_pat_moving]);
                 break;
 
             case MOTION_STOPPED:
@@ -192,10 +205,43 @@ void Light::update()
 
     case DAY_RIDING:
         break;
+
+    case SELECTING_PATTERN:
+        _Patterns->set_pattern(_Pats_Moving[_current_pat_moving]);
+        if (_LightTmr.time_passed(10000))
+        {
+            set_state(ON);
+        }
+        else if (button_state == BUTTON_SHORT_PRESS)
+        {
+            _current_pat_moving++;
+            if (_current_pat_moving >= _num_pats_moving)
+            {
+                _current_pat_moving = 0;
+            }
+        }
+        break;
     }
 }
 
 light_state_t Light::get_state()
 {
     return _state;
+}
+
+uint16_t Light::get_moving_pattern_num()
+{
+    return _current_pat_moving;
+}
+
+void Light::set_moving_pattern_num(uint16_t num)
+{
+    if (num >= _num_pats_moving)
+    {
+        _current_pat_moving = 0;
+    }
+    else
+    {
+        _current_pat_moving = num;
+    }
 }

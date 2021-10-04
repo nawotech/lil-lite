@@ -20,6 +20,8 @@
 #include "power_on.h"
 #include "battery_gauge.h"
 #include "power_off.h"
+#include "grow.h"
+#include "jump.h"
 
 #include "timer.h"
 
@@ -27,6 +29,7 @@ const uint8_t NUM_LEDS = 6;
 
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
 RTC_DATA_ATTR light_state_t light_state = POWERING_ON;
+RTC_DATA_ATTR uint16_t moving_pattern_num = 0;
 
 Button Bttn(BUTTON_PIN, true);
 KXTJ3 Accel(0x0E); // Address pin GND
@@ -46,14 +49,27 @@ Timer DebugTimer;
 RgbColor Red(255, 0, 0);
 RgbColor Yellow(235, 25, 0);
 RgbColor Green(0, 30, 0);
+RgbColor Purple(90, 66, 245);
+RgbColor Pink(245, 66, 182);
 // Patterns
 Flash FlashRed(&Patterns, Red);
+Flash FlashPink(&Patterns, Pink);
 Fade FadeAmber(&Patterns, Yellow);
 Fade ChargeDone(&Patterns, Green);
 Charge ChargeProgress(&Patterns, &Pwr);
 PowerOn PoweringOn(&Patterns);
 BatteryGauge BattGauge(&Patterns, &Pwr);
 PowerOff PoweringOff(&Patterns);
+Grow GrowRed(&Patterns, Red);
+Jump JumpPurple(&Patterns, Purple);
+
+const uint16_t num_pats_moving = 4;
+Pattern *PatsMoving[10] =
+    {
+        &FlashRed,
+        &FlashPink,
+        &GrowRed,
+        &JumpPurple};
 
 void sleep_cb();
 
@@ -68,8 +84,9 @@ Light LilLite(&LightSens,
               &ChargeProgress,
               &ChargeDone,
               &BattGauge,
-              &FlashRed,
-              &FadeAmber);
+              &FadeAmber,
+              PatsMoving,
+              num_pats_moving);
 
 void esp_sleep(bool motion_wake, bool tinmer_wake);
 
@@ -81,7 +98,8 @@ void setup()
   analog_setup();
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
 
-  Pwr.set_battery_level_mAh(bat_level_mAh); // restore battery capacity from last saved value
+  Pwr.set_battery_level_mAh(bat_level_mAh);           // restore battery capacity from last saved value
+  LilLite.set_moving_pattern_num(moving_pattern_num); // restore pattern number from last saved value
 
   LilLite.begin(light_state);
 
@@ -139,7 +157,8 @@ void esp_sleep(bool motion_wake, bool timer_wake)
   {
     return; // if vbus fails to go low, do not sleep
   }
-  bat_level_mAh = Pwr.get_battery_level_mAh(); // backup battery level
+  bat_level_mAh = Pwr.get_battery_level_mAh();           // backup battery level
+  moving_pattern_num = LilLite.get_moving_pattern_num(); // backup moving pattern num
   uint64_t wake_pins = (1 << VBUS_MONITOR_PIN | 1 << BUTTON_PIN);
   if (motion_wake)
   {
