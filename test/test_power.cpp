@@ -16,7 +16,7 @@ void test_states(void)
     VoltageMonitor Ichrg;
     const uint8_t charge_stat_pin = 3;
 
-    Power Pwr(&Vbus, &Vbat, &Ichrg, charge_stat_pin, 400);
+    Power Pwr(&Vbus, &Vbat, &Ichrg, charge_stat_pin, 400, 10.0);
 
     Vbus.MOCK_get_mV(5000);
     When(Method(ArduinoFake(), digitalRead)).Return(0);
@@ -66,7 +66,7 @@ void test_capacity(void)
     VoltageMonitor Ichrg;
     const uint8_t charge_stat_pin = 3;
 
-    Power Pwr(&Vbus, &Vbat, &Ichrg, charge_stat_pin, 400);
+    Power Pwr(&Vbus, &Vbat, &Ichrg, charge_stat_pin, 400, 20.0);
 
     Vbus.MOCK_get_mV(5000);
     When(Method(ArduinoFake(), digitalRead)).Return(0);
@@ -100,16 +100,16 @@ void test_capacity(void)
     TEST_ASSERT_EQUAL_INT_MESSAGE(BATTERY_POWER, Pwr.get_state(), "state = BATTERY_POWER when vbus disconnected and battery not low");
 
     const float ms_to_min_mult = 1000 * 60;
-    Pwr.set_battery_load_current(30.0);
-    Pwr._Tmr_load.MOCK_time_passed(30 * ms_to_min_mult);
-    Pwr.set_battery_load_current(100.0);
+    Pwr.set_battery_load_current(0.0); // just the base current of 20mA
+    Pwr._Tmr_load.MOCK_time_passed(45 * ms_to_min_mult);
+    Pwr.set_battery_load_current(80.0);
     Pwr._Tmr_load.MOCK_time_passed(5 * ms_to_min_mult);
     Pwr.set_battery_load_current(0.0);
     Pwr.update();
     TEST_ASSERT_EQUAL_UINT8_MESSAGE(94, Pwr.get_battery_percent(), "battery percent is 94 after example loads set when in USB_POWER state");
 
     // D. change load current and then switch state to CHARGING, check that battery capacity is updated
-    Pwr.set_battery_load_current(100.0);
+    Pwr.set_battery_load_current(80.0);
     Pwr._Tmr_load.MOCK_time_passed(5 * ms_to_min_mult);
 
     Vbus.MOCK_get_mV(5000);

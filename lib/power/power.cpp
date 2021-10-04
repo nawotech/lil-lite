@@ -1,12 +1,13 @@
 #include "power.h"
 
-Power::Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, float bat_capacity_mAh)
+Power::Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, float bat_capacity_mAh, float base_load_mA)
 {
     _Vbus = vbus;
     _Vbat = vbat;
     _Icharge = charge_current;
     _charge_stat_pin = charge_stat_pin;
     _bat_cap_mAh = bat_capacity_mAh;
+    _base_load_mA = base_load_mA;
 }
 
 void Power::begin()
@@ -15,6 +16,7 @@ void Power::begin()
     _Vbus->begin();
     _Vbat->begin();
     _Icharge->begin();
+    // set_battery_load_current(0.0);
 }
 
 bool Power::is_usb_connected()
@@ -195,7 +197,7 @@ void Power::set_battery_load_current(float mA)
         }
 
         _Tmr_load.reset();
-        _load_mA = mA;
+        _load_mA = _base_load_mA + mA;
     }
 }
 

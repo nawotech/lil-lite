@@ -21,14 +21,10 @@
 #include "battery_gauge.h"
 #include "power_off.h"
 
-#define CURRENT_IDLE_MA 27
-
 const uint8_t NUM_LEDS = 6;
 
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
 RTC_DATA_ATTR light_state_t light_state = POWERING_ON;
-
-Patman Patterns(NUM_LEDS, LED_DATA_PIN);
 
 Button Bttn(BUTTON_PIN, true);
 KXTJ3 Accel(0x0E); // Address pin GND
@@ -36,7 +32,8 @@ Motion Mot(&Accel);
 VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
-Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0);              // 400mAh battery
+Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0, 27.0); // 400mAh battery
+Patman Patterns(NUM_LEDS, LED_DATA_PIN, &Pwr);
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
 
 USBCDC USBSerial;
@@ -74,6 +71,9 @@ void esp_sleep(bool motion_wake, bool tinmer_wake);
 
 void setup()
 {
+  FlashRed.current_mA = 16.0;
+  FadeAmber.current_mA = 25.0;
+
   analog_setup();
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
 

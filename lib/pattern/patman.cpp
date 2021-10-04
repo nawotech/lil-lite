@@ -1,13 +1,14 @@
 #include "patman.h"
 
-Patman::Patman(uint16_t countPixels, uint8_t pin) : Pixels(countPixels, pin), Anim(1)
+Patman::Patman(uint16_t countPixels, uint8_t pin, Power *Pwr) : Pixels(countPixels, pin), Anim(1)
 {
+    _Pwr = Pwr;
 }
 
 void Patman::begin()
 {
     Pixels.Begin();
-    Pixels.Show();
+    blank_leds();
 }
 
 void Patman::update()
@@ -25,6 +26,7 @@ void Patman::set_pattern(Pattern *pattern)
     {
         _current_pattern = pattern;
         _current_pattern->start();
+        _Pwr->set_battery_load_current(pattern->current_mA);
     }
 }
 
@@ -33,6 +35,7 @@ void Patman::blank_leds()
     Anim.StopAll();
     Pixels.ClearTo(0);
     Pixels.Show();
+    _Pwr->set_battery_load_current(0.0);
 }
 
 bool Patman::is_running()

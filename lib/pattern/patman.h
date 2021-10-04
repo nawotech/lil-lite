@@ -3,11 +3,13 @@
 
 #include "NeoPixelBus.h"
 #include "NeoPixelAnimator.h"
+#include "power.h"
 
 class Pattern
 {
 public:
     virtual void start() = 0;
+    float current_mA = 0.0;
 
 private:
     virtual void update_function(const AnimationParam &param) = 0;
@@ -16,7 +18,7 @@ private:
 class Patman
 {
 public:
-    Patman(uint16_t countPixels, uint8_t pin);
+    Patman(uint16_t countPixels, uint8_t pin, Power *Pwr);
     void begin();
     void update();
     void set_pattern(Pattern *pattern);
@@ -28,6 +30,7 @@ public:
 
 private:
     Pattern *_current_pattern = 0;
+    Power *_Pwr;
 };
 
 #endif
