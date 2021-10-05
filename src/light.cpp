@@ -132,7 +132,14 @@ void Light::update()
         }
         else if (!_Patterns->is_running())
         {
-            set_state(ON);
+            if (power_state == LOW_BATTERY)
+            {
+                set_state(OFF);
+            }
+            else
+            {
+                set_state(ON);
+            }
         }
         else if (button_state == BUTTON_SHORT_PRESS)
         {
@@ -144,6 +151,10 @@ void Light::update()
         if (power_state == CHARGING || power_state == USB_POWER)
         {
             set_state(CHARGE);
+        }
+        else if (power_state == LOW_BATTERY)
+        {
+            set_state(BATTERY_GAUGE);
         }
         else if (button_state == BUTTON_SHORT_PRESS)
         {
