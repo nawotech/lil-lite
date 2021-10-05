@@ -37,7 +37,7 @@ Motion Mot(&Accel);
 VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
-Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 400.0, 27.0); // 400mAh battery
+Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 500.0, 27.0); // 500mAh battery
 Patman Patterns(NUM_LEDS, LED_DATA_PIN, &Pwr);
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
 
