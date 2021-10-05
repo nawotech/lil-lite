@@ -92,8 +92,11 @@ void esp_sleep(bool motion_wake, bool tinmer_wake);
 
 void setup()
 {
-  FlashRed.current_mA = 16.0;
-  FadeAmber.current_mA = 25.0;
+  FlashRed.current_mA = 33.6;
+  FlashPink.current_mA = 65.2;
+  GrowRed.current_mA = 63.8;
+  JumpPurple.current_mA = 37.0;
+  FadeAmber.current_mA = 53.2;
 
   analog_setup();
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
