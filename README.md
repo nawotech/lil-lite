@@ -26,8 +26,8 @@ The fun bike light with big potential
 
 ### Changing the pattern
 - Press the button when the light is running, the battery level will show
-- Press again witin 2 sec to cycle through patterns, keep pressing to view the next pattern
-- The new pattern is now selected
+- Press again within 2 sec to cycle through patterns, keep pressing to view the next pattern
+- Once you see the pattern you want, wait (don't press button) and after 3 sec the new pattern will be set
 
 ## Standard Patterns
 - [X] Blink red
