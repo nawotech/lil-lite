@@ -119,7 +119,6 @@ void setup()
 
   USBSerial.begin(115200);
   USB.begin();
-  Serial.begin(9600);
 }
 
 light_state_t old_state = POWERING_ON;
@@ -137,11 +136,6 @@ void loop()
   else if (state == PARKED)
   {
     esp_sleep(true, false);
-  }
-
-  if (DebugTimer.time_passed(1000))
-  {
-    Serial.println(Pwr.get_battery_level_mAh());
   }
 }
 
