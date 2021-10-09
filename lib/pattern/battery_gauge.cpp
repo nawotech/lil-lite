@@ -28,7 +28,7 @@ void BatteryGauge::start()
     {
         _color = RgbColor(255, 0, 0);
     }
-    else if (batt_ratio <= 0.3)
+    else if (batt_ratio <= 0.35)
     {
         _color = RgbColor(255, 128, 0);
     }
@@ -37,7 +37,7 @@ void BatteryGauge::start()
         _color = RgbColor(0, 100, 0);
     }
 
-    _Pat->Anim.StartAnimation(0, 200, std::bind(&BatteryGauge::update_function, this, std::placeholders::_1));
+    _Pat->Anim.StartAnimation(0, 40 * _bat_leds, std::bind(&BatteryGauge::update_function, this, std::placeholders::_1));
 }
 
 void BatteryGauge::update_function(const AnimationParam &param)
@@ -66,6 +66,6 @@ void BatteryGauge::update_function_2(const AnimationParam &param)
     {
         _reverse = true;
         _color = 0;
-        _Pat->Anim.StartAnimation(0, 300, std::bind(&BatteryGauge::update_function, this, std::placeholders::_1));
+        _Pat->Anim.StartAnimation(0, 60 * _bat_leds, std::bind(&BatteryGauge::update_function, this, std::placeholders::_1));
     }
 }
