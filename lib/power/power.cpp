@@ -46,6 +46,11 @@ void Power::update_battery_cap()
     // subtract from current charge
     _bat_mAh = _bat_mAh - last_mAh;
 
+    if (_bat_mAh <= 0.0)
+    {
+        _bat_mAh = 0;
+    }
+
     // reset the timer to start next segment of time to measure
     _Tmr_load.reset();
 }
@@ -189,16 +194,13 @@ uint8_t Power::get_battery_percent()
 
 void Power::set_battery_load_current(float mA)
 {
-    if (mA != _load_mA)
+    if (_state == BATTERY_POWER)
     {
-        if (_state == BATTERY_POWER)
-        {
-            update_battery_cap();
-        }
-
-        _Tmr_load.reset();
-        _load_mA = _base_load_mA + mA;
+        update_battery_cap();
     }
+
+    _Tmr_load.reset();
+    _load_mA = _base_load_mA + mA;
 }
 
 float Power::get_battery_level_mAh()

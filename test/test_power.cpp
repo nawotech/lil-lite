@@ -99,7 +99,7 @@ void test_capacity(void)
     Pwr.update();
     TEST_ASSERT_EQUAL_INT_MESSAGE(BATTERY_POWER, Pwr.get_state(), "state = BATTERY_POWER when vbus disconnected and battery not low");
 
-    const float ms_to_min_mult = 1000 * 60;
+    const uint32_t ms_to_min_mult = 1000 * 60;
     Pwr.set_battery_load_current(0.0); // just the base current of 20mA
     Pwr._Tmr_load.MOCK_time_passed(45 * ms_to_min_mult);
     Pwr.set_battery_load_current(80.0);
@@ -163,6 +163,33 @@ void test_capacity(void)
     Pwr.update();
     TEST_ASSERT_EQUAL_INT_MESSAGE(LOW_BATTERY, Pwr.get_state(), "state = LOW_BATTERY when vbus disconnected and battery low");
     TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, Pwr.get_battery_percent(), "battery percent is 0 on entering LOW_BATTERY state");
+
+    Vbus.MOCK_get_mV(5000);
+    When(Method(ArduinoFake(), digitalRead)).Return(0);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus > 5000 and charge stat = 0");
+
+    // I. Check that battery cannot be discharged to below 0%
+
+    Vbus.MOCK_get_mV(5000);
+    When(Method(ArduinoFake(), digitalRead)).AlwaysReturn(1);
+    Pwr.update();
+
+    Pwr._Tmr_VBUS.MOCK_time_passed(150);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(USB_POWER, Pwr.get_state(), "state = USB_POWER when vbus > 5000 for greater than 100ms and charge stat = 1");
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(100, Pwr.get_battery_percent(), "battery percent is 100 after charge complete");
+
+    Vbus.MOCK_get_mV(100);
+    Vbat.MOCK_get_mV(3750);
+    When(Method(ArduinoFake(), digitalRead)).AlwaysReturn(1);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(BATTERY_POWER, Pwr.get_state(), "state = BATTERY_POWER when vbus disconnected and battery not low");
+    Pwr._Tmr_load.MOCK_time_passed(0);
+    Pwr.set_battery_load_current(380.0);
+    Pwr._Tmr_load.MOCK_time_passed(120 * ms_to_min_mult);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, Pwr.get_battery_percent(), "battery percent is 0 after discharging more than capacity");
 }
 
 void test_power()
