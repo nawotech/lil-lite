@@ -35,3 +35,15 @@ The fun bike light with big potential
 - [X] Bouncing ball
 - [X] Grow flash red
 - [ ] Red and random color flash
+
+## How to program Lil' Lite
+1. Download and install Viusal Studio Code (VSCode)
+2. Open VSCode, click the "extensions" icon on the left bar, looks like 4 squares with 1 square leaving
+3. Search "platformIO" and install the PlatformIO extension
+4. Clone the Lil Lite repo to your computer (see next steps)
+5. Create a folder for git called "git" on your hard drive C:/ or home (if you haven't already)
+6. Open a terminal window and cd C:/git or wherever you made the git folder
+7. Enter `git clone https://github.com/nawotech/lil-lite.git`
+8. Open VSCode, and open the "lil lite" folder
+9. Plug in Lil Lite to your computer with the USB-C cable
+10. Once PlatformIO loads, press the "upload" arrow on the bottom bar to flash the latest firmware
