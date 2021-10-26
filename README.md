@@ -1,6 +1,8 @@
 # Lil' Lite
 The fun bike light with big potential
 
+https://nawo.tech/lil-lite/
+
 ## How to use
 ### Mounting to bike
 - 2 bands are included, select the one sized best for your bike seat post
