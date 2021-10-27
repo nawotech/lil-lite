@@ -1,11 +1,11 @@
 #include "power.h"
 
-Power::Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, float bat_capacity_mAh, float base_load_mA)
+Power::Power(VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, uint8_t vbus_pin, float bat_capacity_mAh, float base_load_mA)
 {
-    _Vbus = vbus;
     _Vbat = vbat;
     _Icharge = charge_current;
     _charge_stat_pin = charge_stat_pin;
+    _vbus_pin = vbus_pin;
     _bat_cap_mAh = bat_capacity_mAh;
     _base_load_mA = base_load_mA;
 }
@@ -13,7 +13,7 @@ Power::Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_
 void Power::begin()
 {
     pinMode(_charge_stat_pin, INPUT);
-    _Vbus->begin();
+    pinMode(_vbus_pin, INPUT);
     _Vbat->begin();
     _Icharge->begin();
     // set_battery_load_current(0.0);
@@ -21,12 +21,7 @@ void Power::begin()
 
 bool Power::is_usb_connected()
 {
-    uint16_t mv_vbus = _Vbus->get_mV();
-    if (mv_vbus > 4000)
-    {
-        return true;
-    }
-    return false;
+    return digitalRead(_vbus_pin);
 }
 
 bool Power::is_charging()

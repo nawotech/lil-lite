@@ -17,7 +17,7 @@ typedef enum
 class Power
 {
 public:
-    Power(VoltageMonitor *vbus, VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, float bat_capacity_mAh, float base_load_mA);
+    Power(VoltageMonitor *vbat, VoltageMonitor *charge_current, uint8_t charge_stat_pin, uint8_t vbus_pin, float bat_capacity_mAh, float base_load_mA);
     void update();
     void begin();
     power_state_t get_state();
@@ -37,10 +37,10 @@ private:
     void update_battery_cap();
     void update_battery_charge();
 
-    VoltageMonitor *_Vbus;
     VoltageMonitor *_Vbat;
     VoltageMonitor *_Icharge;
     uint8_t _charge_stat_pin;
+    uint8_t _vbus_pin;
 
     power_state_t _state = BATTERY_POWER;
 

@@ -27,7 +27,6 @@ USBCDC USBSerial;
 
 Timer TmrAutosend;
 
-VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Imon(CHARGE_I_PIN, 1.0);
 
@@ -43,7 +42,7 @@ void esp_sleep();
 void setup()
 {
   pinMode(BUTTON_PIN, INPUT);
-  pinMode(VBUS_MONITOR_PIN, INPUT);
+  pinMode(VBUS_PIN, INPUT);
   pinMode(VBAT_MONITOR_PIN, INPUT);
   pinMode(CHARGE_STATUS_PIN, INPUT);
   pinMode(LIGHT_SENSOR_EN_PIN, OUTPUT);
@@ -73,10 +72,10 @@ void send_all_readings()
 {
   StaticJsonDocument<200> Readings;
 
-  Readings["vbus_v"] = Vbus.get_mV() / 1000.0;
   Readings["vbat_v"] = Vbat.get_mV() / 1000.0;
   Readings["button_state"] = Bttn.get_state();
   Readings["charge_stat"] = digitalRead(CHARGE_STATUS_PIN);
+  Readings["vbus"] = digitalRead(VBUS_PIN);
   Readings["charge_i_mA"] = Imon.get_mV() / 10.0;
   Readings["light_sensor_V"] = LightSens.read_mV() / 1000.0;
 
@@ -143,7 +142,7 @@ void esp_sleep()
   int i;
   for (i = 0; i < 100; i++) // wait for VBUS and button to go low before sleeping
   {
-    if (Vbus.get_mV() < 1000 && !Bttn.is_pressed())
+    if (digitalRead(VBUS_PIN) == 0 && !Bttn.is_pressed())
     {
       break;
     }
@@ -153,7 +152,7 @@ void esp_sleep()
   {
     return; // if vbus fails to go low, do not sleep
   }
-  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN | 1 << BUTTON_PIN);
+  uint64_t wake_pins = (1 << VBUS_PIN | 1 << BUTTON_PIN);
   esp_sleep_enable_ext1_wakeup(wake_pins, ESP_EXT1_WAKEUP_ANY_HIGH);
   esp_deep_sleep_start();
 }
