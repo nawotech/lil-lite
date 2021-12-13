@@ -33,11 +33,15 @@ VoltageMonitor Imon(CHARGE_I_PIN, 1.0);
 Button Bttn(BUTTON_PIN, true);
 
 KXTJ3 Accel(0x0E); // Address pin GND
-Motion Move(&Accel);
 
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
 
 void esp_sleep();
+
+void configure_accel_int(bool polarity)
+{
+    Accel.intConf(20, 1, 3, polarity, true); // set accelerometer to cause interrupt on motion
+}
 
 void setup()
 {
@@ -47,6 +51,7 @@ void setup()
   pinMode(CHARGE_STATUS_PIN, INPUT);
   pinMode(LIGHT_SENSOR_EN_PIN, OUTPUT);
   pinMode(LIGHT_SENSOR_READ_PIN, INPUT);
+  pinMode(ACCEL_INTERRUPT_PIN, INPUT);
   pinMode(SW_EN_PIN, OUTPUT);
   analog_setup();
   digitalWrite(SW_EN_PIN, 1);
@@ -54,7 +59,7 @@ void setup()
 
   Wire.setPins(ACCEL_I2C_SDA_PIN, ACCEL_I2C_SCL_PIN); // accel library uses Wire, for ESP32 set pins
   Accel.begin(ACCEL_SAMPLE_RATE, ACCEL_RANGE);
-  Accel.intConf(20, 1, 2, true); // set accelerometer to cause interrupt on motion
+  configure_accel_int(true);
 
   Pixels.Begin();
   Pixels.Show();
@@ -73,11 +78,18 @@ void send_all_readings()
   StaticJsonDocument<200> Readings;
 
   Readings["vbat_v"] = Vbat.get_mV() / 1000.0;
-  Readings["button_state"] = Bttn.get_state();
+  Readings["button_pressed"] = (int)Bttn.is_pressed();
   Readings["charge_stat"] = digitalRead(CHARGE_STATUS_PIN);
   Readings["vbus"] = digitalRead(VBUS_PIN);
   Readings["charge_i_mA"] = Imon.get_mV() / 10.0;
   Readings["light_sensor_V"] = LightSens.read_mV() / 1000.0;
+  Readings["accel_int"] = digitalRead(ACCEL_INTERRUPT_PIN);
+  int intr =   (int)Accel.isMotionInt();
+  Readings["i2c_int"] = intr;
+
+  Readings["accel_x"] = Accel.axisAccel(X);
+  Readings["accel_y"] = Accel.axisAccel(Y);
+  Readings["accel_z"] = Accel.axisAccel(Z);
 
   serializeJson(Readings, USBSerial);
   USBSerial.println();
@@ -120,6 +132,30 @@ void loop()
       else if (on == 0)
       {
         digitalWrite(SW_EN_PIN, 0);
+      }
+    }
+    else if (byte == 'T')
+    {
+      int on = USBSerial.parseInt();
+      if (on == 1)
+      {
+        Accel.setSelfTest(1);
+      }
+      else if (on == 0)
+      {
+        Accel.setSelfTest(0);
+      }
+    }
+    else if (byte == 'P')
+    {
+      int on = USBSerial.parseInt();
+      if (on == 1)
+      {
+        configure_accel_int(1);
+      }
+      else if (on == 0)
+      {
+        configure_accel_int(0);
       }
     }
     else if (byte == 'A')
