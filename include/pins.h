@@ -26,7 +26,7 @@
 #define CHARGE_STATUS_PIN 9
 #define CHARGE_I_PIN 10
 #define VBAT_MONITOR_PIN 7
-#define VBUS_MONITOR_PIN 6
+#define VBUS_PIN 6
 
 // USB data lines
 #define USB_D_POS_PIN 20

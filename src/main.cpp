@@ -34,10 +34,9 @@ RTC_DATA_ATTR uint16_t moving_pattern_num = 0;
 Button Bttn(BUTTON_PIN, true);
 KXTJ3 Accel(0x0E); // Address pin GND
 Motion Mot(&Accel);
-VoltageMonitor Vbus(VBUS_MONITOR_PIN, 2.96078);
 VoltageMonitor Vbat(VBAT_MONITOR_PIN, 2.0);
 VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
-Power Pwr(&Vbus, &Vbat, &Ichrg, CHARGE_STATUS_PIN, 500.0, 27.0); // 500mAh battery
+Power Pwr(&Vbat, &Ichrg, CHARGE_STATUS_PIN, VBUS_PIN, 500.0, 27.0); // 500mAh battery
 Patman Patterns(NUM_LEDS, LED_DATA_PIN, &Pwr);
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
 
@@ -144,7 +143,7 @@ void esp_sleep(bool motion_wake, bool timer_wake)
   int i;
   for (i = 0; i < 100; i++) // wait for VBUS and button to go low before sleeping
   {
-    if (Vbus.get_mV() < 1000 && !Bttn.is_pressed())
+    if (digitalRead(VBUS_PIN) == 0 && !Bttn.is_pressed())
     {
       break;
     }
@@ -156,7 +155,7 @@ void esp_sleep(bool motion_wake, bool timer_wake)
   }
   bat_level_mAh = Pwr.get_battery_level_mAh();           // backup battery level
   moving_pattern_num = LilLite.get_moving_pattern_num(); // backup moving pattern num
-  uint64_t wake_pins = (1 << VBUS_MONITOR_PIN | 1 << BUTTON_PIN);
+  uint64_t wake_pins = (1 << VBUS_PIN | 1 << BUTTON_PIN);
   if (motion_wake)
   {
     wake_pins |= 1 << ACCEL_INTERRUPT_PIN;
