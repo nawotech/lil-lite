@@ -1,6 +1,6 @@
 #include "motion.h"
-#define ACCEL_SAMPLE_RATE 3.125 // HZ - Samples per second - 0.781, 1.563, 3.125, 6.25, 12.5, 25, 50, 100, 200, 400, 800, 1600Hz
-#define ACCEL_RANGE 2           // Accelerometer range = 2, 4, 8, 16g
+#define ACCEL_SAMPLE_RATE 50 // HZ - Samples per second - 0.781, 1.563, 3.125, 6.25, 12.5, 25, 50, 100, 200, 400, 800, 1600Hz
+#define ACCEL_RANGE 2        // Accelerometer range = 2, 4, 8, 16g
 
 Motion::Motion(KXTJ3 *accel)
 {

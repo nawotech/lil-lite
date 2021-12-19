@@ -25,6 +25,15 @@
 
 #include "timer.h"
 
+#include "WiFi.h"
+#include <WiFiUdp.h>
+#include <coap-simple.h>
+
+#include <ArduinoJSON.h>
+
+const char *ssid = "lil-lite";
+const char *password = "letterrip";
+
 const uint8_t NUM_LEDS = 6;
 
 RTC_DATA_ATTR float bat_level_mAh = 300.0;
@@ -43,6 +52,9 @@ LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night
 USBCDC USBSerial;
 
 Timer DebugTimer;
+
+WiFiUDP Udp;
+Coap Cp(Udp);
 
 // Colors
 RgbColor Red(255, 0, 0);
@@ -71,6 +83,62 @@ Pattern *PatsMoving[10] =
         &JumpPurple};
 
 void sleep_cb();
+
+bool LEDSTATE;
+
+// CoAP server endpoint URL
+void callback_light(CoapPacket &packet, IPAddress ip, int port)
+{
+  USBSerial.println("[Light] ON/OFF");
+
+  // send response
+  char p[packet.payloadlen + 1];
+  memcpy(p, packet.payload, packet.payloadlen);
+  p[packet.payloadlen] = NULL;
+
+  String message(p);
+
+  if (message.equals("0"))
+    LEDSTATE = false;
+  else if (message.equals("1"))
+    LEDSTATE = true;
+
+  if (LEDSTATE)
+  {
+    Cp.sendResponse(ip, port, packet.messageid, "1");
+  }
+  else
+  {
+    Cp.sendResponse(ip, port, packet.messageid, "0");
+  }
+}
+
+void callback_accel_read(CoapPacket &packet, IPAddress ip, int port)
+{
+  StaticJsonDocument<50> Readings;
+  Readings["x"] = Accel.axisAccel(X);
+  Readings["y"] = Accel.axisAccel(Y);
+  Readings["z"] = Accel.axisAccel(Z);
+
+  String reading;
+  char reading_c[50];
+  serializeJson(Readings, reading);
+  reading.toCharArray(reading_c, 50);
+
+  Cp.sendResponse(ip, port, packet.messageid, reading_c);
+}
+
+// CoAP client response callback
+void callback_response(CoapPacket &packet, IPAddress ip, int port)
+{
+  USBSerial.println("[Coap Response got]");
+
+  char p[packet.payloadlen + 1];
+  memcpy(p, packet.payload, packet.payloadlen);
+  p[packet.payloadlen] = NULL;
+
+  USBSerial.println(p);
+}
 
 Light LilLite(&LightSens,
               &Patterns,
@@ -118,6 +186,13 @@ void setup()
 
   USBSerial.begin(115200);
   USB.begin();
+
+  WiFi.softAP(ssid, password);
+
+  Cp.server(callback_light, "light");
+  Cp.server(callback_accel_read, "accel");
+  Cp.response(callback_response);
+  Cp.start();
 }
 
 light_state_t old_state = POWERING_ON;
@@ -136,6 +211,8 @@ void loop()
   {
     esp_sleep(true, false);
   }
+
+  Cp.loop();
 }
 
 void esp_sleep(bool motion_wake, bool timer_wake)
