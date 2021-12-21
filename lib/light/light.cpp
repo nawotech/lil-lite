@@ -8,6 +8,7 @@ Light::Light(LightSensor *LightSens, Patman *Pttrns, Motion *Mot, Button *Bttn, 
              Pattern *Pat_Charge_Done,
              Pattern *Pat_Battery_Level,
              Pattern *Pat_Stopped,
+             Pattern *Pat_Wifi_Control,
              Pattern **Pats_Moving,
              uint16_t num_pats_moving)
 {
@@ -26,6 +27,7 @@ Light::Light(LightSensor *LightSens, Patman *Pttrns, Motion *Mot, Button *Bttn, 
     _Pat_Battery_Level = Pat_Battery_Level;
     _Pats_Moving = Pats_Moving;
     _Pat_Stopped = Pat_Stopped;
+    _Pat_Wifi_Control = Pat_Wifi_Control;
     _num_pats_moving = num_pats_moving;
 
     _current_pat_moving = 1;
@@ -87,6 +89,10 @@ void Light::set_state(light_state_t new_state)
             _Patterns->set_pattern(_Pat_Power_Off);
             break;
 
+        case POWERING_OFF_FROM_WIFI:
+            _Patterns->set_pattern(_Pat_Power_Off);
+            break;
+
         case OFF:
             _Patterns->blank_leds();
             break;
@@ -98,6 +104,18 @@ void Light::set_state(light_state_t new_state)
         case SELECTING_PATTERN:
             _LightTmr.reset();
             break;
+
+        case WIFI_CONTROL:
+            _Patterns->set_pattern(_Pat_Wifi_Control);
+        }
+
+        if (new_state == BATTERY_GAUGE)
+        {
+            _Button->set_multi_press_enabled(true);
+        }
+        else
+        {
+            _Button->set_multi_press_enabled(false);
         }
 
         _state = new_state;
@@ -140,6 +158,10 @@ void Light::update()
             {
                 set_state(ON);
             }
+        }
+        else if (button_state == BUTTON_TRIPLE_PRESS)
+        {
+            set_state(WIFI_CONTROL);
         }
         else if (button_state == BUTTON_SHORT_PRESS)
         {
@@ -194,6 +216,17 @@ void Light::update()
         }
         break;
 
+    case POWERING_OFF_FROM_WIFI:
+        if (!_Patterns->is_running())
+        {
+            set_state(OFF);
+        }
+        else if (!_Button->is_pressed())
+        {
+            set_state(WIFI_CONTROL);
+        }
+        break;
+
     case CHARGE:
         if (power_state == USB_POWER)
         {
@@ -232,6 +265,16 @@ void Light::update()
             }
         }
         break;
+
+    case WIFI_CONTROL:
+        if (power_state == LOW_BATTERY)
+        {
+            set_state(BATTERY_GAUGE);
+        }
+        else if (button_state == BUTTON_LONG_HOLD_START)
+        {
+            set_state(POWERING_OFF_FROM_WIFI);
+        }
     }
 }
 

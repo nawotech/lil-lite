@@ -40,7 +40,7 @@ void esp_sleep();
 
 void configure_accel_int(bool polarity)
 {
-    Accel.intConf(20, 1, 3, polarity, true); // set accelerometer to cause interrupt on motion
+  Accel.intConf(20, 1, 3, polarity, true); // set accelerometer to cause interrupt on motion
 }
 
 void setup()
@@ -84,7 +84,7 @@ void send_all_readings()
   Readings["charge_i_mA"] = Imon.get_mV() / 10.0;
   Readings["light_sensor_V"] = LightSens.read_mV() / 1000.0;
   Readings["accel_int"] = digitalRead(ACCEL_INTERRUPT_PIN);
-  int intr =   (int)Accel.isMotionInt();
+  int intr = (int)Accel.isMotionInt();
   Readings["i2c_int"] = intr;
 
   Readings["accel_x"] = Accel.axisAccel(X);
@@ -161,6 +161,36 @@ void loop()
     else if (byte == 'A')
     {
       autosend = true;
+    }
+    else if (byte == 'B')
+    {
+      button_state_t button_state = Bttn.get_state();
+      switch (button_state)
+      {
+      case BUTTON_NONE:
+        USBSerial.println("NONE");
+        break;
+
+      case BUTTON_SHORT_PRESS:
+        USBSerial.println("SHORT_PRESS");
+        break;
+
+      case BUTTON_LONG_HOLD_START:
+        USBSerial.println("LONG_HOLD_START");
+        break;
+
+      case BUTTON_LONG_HOLD_END:
+        USBSerial.println("LONG_HOLD_END");
+        break;
+
+      case BUTTON_DOUPLE_PRESS:
+        USBSerial.println("DOUBLE_PRESS");
+        break;
+
+      case BUTTON_TRIPLE_PRESS:
+        USBSerial.println("TRIPLE_PRESS");
+        break;
+      }
     }
   }
 

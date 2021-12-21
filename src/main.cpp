@@ -22,6 +22,7 @@
 #include "power_off.h"
 #include "grow.h"
 #include "jump.h"
+#include "wifi_control.h"
 
 #include "timer.h"
 
@@ -61,6 +62,7 @@ BatteryGauge BattGauge(&Patterns, &Pwr);
 PowerOff PoweringOff(&Patterns);
 Grow GrowRed(&Patterns, Red);
 Jump JumpPurple(&Patterns, Purple);
+WifiControl WifiControlling(&Patterns);
 
 const uint16_t num_pats_moving = 4;
 Pattern *PatsMoving[10] =
@@ -84,6 +86,7 @@ Light LilLite(&LightSens,
               &ChargeDone,
               &BattGauge,
               &FadeAmber,
+              &WifiControlling,
               PatsMoving,
               num_pats_moving);
 
