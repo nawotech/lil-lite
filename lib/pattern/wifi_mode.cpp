@@ -1,19 +1,19 @@
-#include "wifi_control.h"
+#include "wifi_mode.h"
 
-WifiControl::WifiControl(Patman *Pat)
+WifiMode::WifiMode(Patman *Pat)
 {
     _color = RgbColor(30, 0, 50);
     _Pat = Pat;
     _speed = 1000;
 }
 
-void WifiControl::start()
+void WifiMode::start()
 {
     _Pat->Pixels.ClearTo(0);
-    _Pat->Anim.StartAnimation(0, _speed, std::bind(&WifiControl::update_function, this, std::placeholders::_1));
+    _Pat->Anim.StartAnimation(0, _speed, std::bind(&WifiMode::update_function, this, std::placeholders::_1));
 }
 
-void WifiControl::update_function(const AnimationParam &param)
+void WifiMode::update_function(const AnimationParam &param)
 {
     float progress = NeoEase::QuadraticInOut(param.progress);
 

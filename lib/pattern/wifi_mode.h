@@ -1,12 +1,12 @@
-#ifndef WIFI_CONTROL_H
-#define WIFI_CONTROL_H
+#ifndef WIFI_MODE_H
+#define WIFI_MODE_H
 
 #include "patman.h"
 
-class WifiControl : public Pattern
+class WifiMode : public Pattern
 {
 public:
-    WifiControl(Patman *Pat);
+    WifiMode(Patman *Pat);
     void start();
 
 private:

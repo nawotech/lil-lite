@@ -13,7 +13,6 @@
 #include "patman.h"
 #include "light_sensor.h"
 #include "light.h"
-
 #include "flash.h"
 #include "fade.h"
 #include "charge.h"
@@ -22,9 +21,15 @@
 #include "power_off.h"
 #include "grow.h"
 #include "jump.h"
+#include "wifi_mode.h"
+#include "timer.h"
+#include "WiFi.h"
+#include <WiFiUdp.h>
+#include <coap-simple.h>
 #include "wifi_control.h"
 
-#include "timer.h"
+const char *ssid = "lil-lite";
+const char *password = "letterrip";
 
 const uint8_t NUM_LEDS = 6;
 
@@ -40,6 +45,10 @@ VoltageMonitor Ichrg(CHARGE_I_PIN, 1.0);
 Power Pwr(&Vbat, &Ichrg, CHARGE_STATUS_PIN, VBUS_PIN, 500.0, 27.0); // 500mAh battery
 Patman Patterns(NUM_LEDS, LED_DATA_PIN, &Pwr);
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
+
+WiFiUDP Udp;
+Coap Cp(Udp);
+WifiControl WifiCont(&Cp, &Accel);
 
 USBCDC USBSerial;
 
@@ -62,7 +71,7 @@ BatteryGauge BattGauge(&Patterns, &Pwr);
 PowerOff PoweringOff(&Patterns);
 Grow GrowRed(&Patterns, Red);
 Jump JumpPurple(&Patterns, Purple);
-WifiControl WifiControlling(&Patterns);
+WifiMode WifiControlling(&Patterns);
 
 const uint16_t num_pats_moving = 4;
 Pattern *PatsMoving[10] =
@@ -138,6 +147,15 @@ void loop()
   else if (state == PARKED)
   {
     esp_sleep(true, false);
+  }
+  else if (state == WIFI_CONTROL)
+  {
+    if (!WifiCont.is_enabled())
+    {
+      WiFi.softAP(ssid, password);
+      WifiCont.begin();
+    }
+    WifiCont.update();
   }
 }
 
