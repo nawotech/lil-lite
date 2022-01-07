@@ -46,13 +46,13 @@ Power Pwr(&Vbat, &Ichrg, CHARGE_STATUS_PIN, VBUS_PIN, 500.0, 27.0); // 500mAh ba
 Patman Patterns(NUM_LEDS, LED_DATA_PIN, &Pwr);
 LightSensor LightSens(LIGHT_SENSOR_READ_PIN, LIGHT_SENSOR_EN_PIN, 600); // night mV found by testing
 
-WiFiUDP Udp;
-Coap Cp(Udp);
-WifiControl WifiCont(&Cp, &Accel);
-
 USBCDC USBSerial;
 
 Timer DebugTimer;
+
+WiFiUDP Udp;
+Coap Cp(Udp);
+WifiControl WifiCont(&Cp, &Accel, &USBSerial);
 
 // Colors
 RgbColor Red(255, 0, 0);
@@ -154,6 +154,7 @@ void loop()
     {
       WiFi.softAP(ssid, password);
       WifiCont.begin();
+      Accel.begin(50, 2);
     }
     WifiCont.update();
   }
