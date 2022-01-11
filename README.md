@@ -31,6 +31,12 @@ https://nawo.tech/lil-lite/
 - Press again within 2 sec to cycle through patterns, keep pressing to view the next pattern
 - Once you see the pattern you want, wait (don't press button) and after 3 sec the new pattern will be set
 
+### Manually turning off
+- If you need to keep the light from turning on by itself, you can manually turn it off
+- First, make sure the light is on and showing the pattern
+- Then, press and hold the button and wait until the lights turn fully off, then release the button
+- It is now off, see "turning on" on how to turn it back on again manually
+
 ## Standard Patterns
 - [X] Blink red
 - [X] Bink pink
