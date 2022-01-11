@@ -1,10 +1,12 @@
 #include "wifi_control.h"
 #include <ArduinoJson.h>
+#include "NeoPixelBus.h"
 
-WifiControl::WifiControl(Coap *Cp, KXTJ3 *Accel, USBCDC *USBSerial)
+WifiControl::WifiControl(Coap *Cp, KXTJ3 *Accel, Light *Lite, USBCDC *USBSerial)
 {
     _Cp = Cp;
     _Accel = Accel;
+    _Light = Lite;
     _USBSerial = USBSerial;
 }
 
@@ -12,6 +14,7 @@ void WifiControl::begin()
 {
     _Cp->server(std::bind(&WifiControl::callback_accel_read, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), "accel");
     _Cp->server(std::bind(&WifiControl::callback_accel_settings, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), "accel_settings");
+    _Cp->server(std::bind(&WifiControl::callback_pattern, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), "pattern");
     // _Cp->response(callback_response);
     _Cp->start();
     _enabled = true;
@@ -75,7 +78,26 @@ void WifiControl::callback_accel_settings(CoapPacket &packet, IPAddress ip, int 
     _USBSerial->println(zNegEn);
     _USBSerial->println("");
     */
-    _USBSerial->println(packet.payloadlen);
+    // _USBSerial->println(packet.payloadlen);
+}
+
+void WifiControl::callback_pattern(CoapPacket &packet, IPAddress ip, int port)
+{
+    char p[packet.payloadlen + 1];
+    memcpy(p, packet.payload, packet.payloadlen);
+    p[packet.payloadlen] = NULL;
+
+    DynamicJsonDocument doc(300);
+    deserializeJson(doc, p);
+
+    bool pattern_en = doc["pat_en"];
+    const char *color_string = doc["color"];
+    uint8_t pat_num = doc["pat_num"];
+    uint32_t color_number = strtol(&color_string[1], NULL, 16);
+
+    _Light->set_moving_pattern_color(HtmlColor(color_number));
+    _Light->set_wifi_pattern_enabled(pattern_en);
+    _Light->set_moving_pattern_num(pat_num);
 }
 
 void WifiControl::update()

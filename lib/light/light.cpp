@@ -275,6 +275,19 @@ void Light::update()
         {
             set_state(POWERING_OFF_FROM_WIFI);
         }
+        break;
+
+    case WIFI_CONTROL_PATTERN:
+        if (power_state == LOW_BATTERY)
+        {
+            set_state(BATTERY_GAUGE);
+        }
+        else if (button_state == BUTTON_LONG_HOLD_START)
+        {
+            set_state(POWERING_OFF_FROM_WIFI);
+        }
+        _Patterns->set_pattern(_Pats_Moving[_current_pat_moving]);
+        break;
     }
 }
 
@@ -290,12 +303,25 @@ uint16_t Light::get_moving_pattern_num()
 
 void Light::set_moving_pattern_num(uint16_t num)
 {
-    if (num >= _num_pats_moving)
-    {
-        _current_pat_moving = 0;
-    }
-    else
+    if (num < _num_pats_moving)
     {
         _current_pat_moving = num;
+    }
+}
+
+void Light::set_moving_pattern_color(RgbColor color)
+{
+    _Pats_Moving[_current_pat_moving]->set_color(color);
+}
+
+void Light::set_wifi_pattern_enabled(bool enabled)
+{
+    if(_state == WIFI_CONTROL && enabled)
+    {
+        set_state(WIFI_CONTROL_PATTERN);
+    }
+    else if(_state == WIFI_CONTROL_PATTERN && !enabled)
+    {
+        set_state(WIFI_CONTROL);
     }
 }

@@ -11,7 +11,8 @@ Motion::Motion(KXTJ3 *accel)
 void Motion::begin()
 {
     _Accel->begin(ACCEL_SAMPLE_RATE, ACCEL_RANGE);
-    _Accel->intConf(20, 1, 20, true); // set accelerometer to cause interrupt on motion
+    _Accel->intConf(72, 10, 53, true, false, 25.0);
+    // _Accel->intConf(20, 1, 20, true); // set accelerometer to cause interrupt on motion
     _Tmr.reset();
 }
 

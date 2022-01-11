@@ -1,5 +1,10 @@
 #include "patman.h"
 
+void Pattern::set_color(RgbColor color)
+{
+    _color = color;
+}
+
 Patman::Patman(uint16_t countPixels, uint8_t pin, Power *Pwr) : Pixels(countPixels, pin), Anim(1)
 {
     _Pwr = Pwr;

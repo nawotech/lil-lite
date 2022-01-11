@@ -12,7 +12,6 @@ public:
 private:
     void update_function(const AnimationParam &param);
     void update_function_2(const AnimationParam &param);
-    RgbColor _color;
     Patman *_Pat;
 };
 

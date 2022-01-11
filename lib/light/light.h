@@ -20,6 +20,7 @@ typedef enum
     PARKED,
     DAY_RIDING,
     WIFI_CONTROL,
+    WIFI_CONTROL_PATTERN,
     POWERING_OFF_FROM_WIFI
 } light_state_t;
 
@@ -41,6 +42,8 @@ public:
     light_state_t get_state();
     uint16_t get_moving_pattern_num();
     void set_moving_pattern_num(uint16_t num);
+    void set_moving_pattern_color(RgbColor color);
+    void set_wifi_pattern_enabled(bool enabled);
 
 private:
     void set_state(light_state_t new_state);

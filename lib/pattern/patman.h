@@ -9,7 +9,9 @@ class Pattern
 {
 public:
     virtual void start() = 0;
+    void set_color(RgbColor color);
     float current_mA = 0.0;
+    RgbColor _color;
 
 private:
     virtual void update_function(const AnimationParam &param) = 0;

@@ -50,10 +50,6 @@ USBCDC USBSerial;
 
 Timer DebugTimer;
 
-WiFiUDP Udp;
-Coap Cp(Udp);
-WifiControl WifiCont(&Cp, &Accel, &USBSerial);
-
 // Colors
 RgbColor Red(255, 0, 0);
 RgbColor Yellow(235, 25, 0);
@@ -73,11 +69,10 @@ Grow GrowRed(&Patterns, Red);
 Jump JumpPurple(&Patterns, Purple);
 WifiMode WifiControlling(&Patterns);
 
-const uint16_t num_pats_moving = 4;
-Pattern *PatsMoving[10] =
+const uint16_t num_pats_moving = 3;
+Pattern *PatsMoving[3] =
     {
         &FlashRed,
-        &FlashPink,
         &GrowRed,
         &JumpPurple};
 
@@ -98,6 +93,10 @@ Light LilLite(&LightSens,
               &WifiControlling,
               PatsMoving,
               num_pats_moving);
+
+WiFiUDP Udp;
+Coap Cp(Udp);
+WifiControl WifiCont(&Cp, &Accel, &LilLite, &USBSerial);
 
 void esp_sleep(bool motion_wake, bool tinmer_wake);
 
@@ -148,7 +147,7 @@ void loop()
   {
     esp_sleep(true, false);
   }
-  else if (state == WIFI_CONTROL)
+  else if (state == WIFI_CONTROL || state == WIFI_CONTROL_PATTERN)
   {
     if (!WifiCont.is_enabled())
     {
