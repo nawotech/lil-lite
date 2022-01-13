@@ -165,6 +165,10 @@ void Power::update()
             _Tmr_load.reset();
             _charge_mA = 0.0;
         }
+        if (_state == USB_POWER)
+        {
+            _Tmr_load.reset();
+        }
         if (new_state == CHARGING) // entering charging state
         {
             _charge_stopped = false;

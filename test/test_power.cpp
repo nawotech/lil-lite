@@ -216,8 +216,67 @@ void test_capacity(void)
     TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, Pwr.get_battery_percent(), "battery percent is 0 after discharging more than capacity");
 }
 
+void test_unplug(void)
+{
+    VoltageMonitor Vbat;
+    VoltageMonitor Ichrg;
+    const uint8_t vbus_pin = 2;
+    const uint8_t charge_stat_pin = 3;
+
+    Power Pwr(&Vbat, &Ichrg, charge_stat_pin, vbus_pin, 400, 10.0);
+
+    simulate_vbus_not_connected();
+    simulate_charge_stat_high();
+    Vbat.MOCK_get_mV(3750);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(BATTERY_POWER, Pwr.get_state(), "state = BATTERY_POWER when vbus disconnected and battery not low");
+
+    simulate_vbus_connected();
+    simulate_charge_stat_low();
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus = 1 and charge stat = 0");
+
+    Ichrg.MOCK_get_mV(900);
+    Pwr._Tmr_load.MOCK_time_passed(1000000);
+    Pwr.update();
+    Pwr._Tmr_load.MOCK_time_passed(1000000);
+    Pwr.update();
+
+    simulate_vbus_connected();
+    simulate_charge_stat_high();
+    Pwr.update();
+    Pwr._Tmr_VBUS.MOCK_time_passed(150);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(USB_POWER, Pwr.get_state(), "state = USB_POWER when vbus = 1 for greater than 100ms and charge stat = 1");
+
+    float bat_cap = Pwr.get_battery_level_mAh();
+    TEST_ASSERT_EQUAL(400.0, bat_cap);
+
+    Pwr.set_battery_load_current(100.0);
+    Pwr._Tmr_load.MOCK_time_passed(1000 * 60 * 60);
+    Pwr.update();
+
+    bat_cap = Pwr.get_battery_level_mAh();
+    TEST_ASSERT_EQUAL_MESSAGE(400.0, bat_cap, "No charge gets removed while plugged in");
+
+    simulate_vbus_not_connected();
+    simulate_charge_stat_high();
+    Vbat.MOCK_get_mV(3750);
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(BATTERY_POWER, Pwr.get_state(), "state = BATTERY_POWER when vbus disconnected and battery not low");
+
+    simulate_vbus_connected();
+    simulate_charge_stat_low();
+    Pwr.update();
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CHARGING, Pwr.get_state(), "state = CHARGING when vbus = 1 and charge stat = 0");
+
+    bat_cap = Pwr.get_battery_level_mAh();
+    TEST_ASSERT_EQUAL(400.0, bat_cap);
+}
+
 void test_power()
 {
     RUN_TEST(test_states);
     RUN_TEST(test_capacity);
+    RUN_TEST(test_unplug);
 }
