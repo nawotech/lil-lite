@@ -1,3 +1,6 @@
+Working on new patterns mainly. 
+
+
 # Lil' Lite
 The fun bike light with big potential
 
