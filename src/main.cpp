@@ -13,6 +13,11 @@
 #include "patman.h"
 #include "light_sensor.h"
 #include "light.h"
+#include "alt.h"
+#include "alt2.h"
+#include "growrev.h"
+#include "pulse.h"
+#include "rotate.h"
 
 #include "flash.h"
 #include "fade.h"
@@ -46,29 +51,55 @@ Timer DebugTimer;
 
 // Colors
 RgbColor Red(255, 0, 0);
-RgbColor Yellow(235, 25, 0);
-RgbColor Green(0, 30, 0);
+RgbColor Blue(0,20,255);
+RgbColor Amber(235, 50, 0);
+RgbColor Yellow(235, 100, 0);
+RgbColor Green(0, 255, 110);
 RgbColor Purple(90, 66, 245);
 RgbColor Pink(245, 66, 182);
+RgbColor White(255, 255, 255);
+RgbColor None(0, 0, 0);
+
+
+
 // Patterns
 Flash FlashRed(&Patterns, Red);
 Flash FlashPink(&Patterns, Pink);
+
 Fade FadeAmber(&Patterns, Yellow);
 Fade ChargeDone(&Patterns, Green);
+
+GrowRev GrowRev(&Patterns, )
+
+Grow GrowRev(&Patterns, Red);
+
+Pulse PulseBlue(&Patterns, Blue);
+
+Jump JumpPurple(&Patterns, Purple);
+
+
+// -----------------------
+
+
 Charge ChargeProgress(&Patterns, &Pwr);
 PowerOn PoweringOn(&Patterns);
 BatteryGauge BattGauge(&Patterns, &Pwr);
 PowerOff PoweringOff(&Patterns);
-Grow GrowRed(&Patterns, Red);
-Jump JumpPurple(&Patterns, Purple);
 
-const uint16_t num_pats_moving = 4;
+
+// ----------------------
+
+const uint16_t num_pats_moving = 5; 
 Pattern *PatsMoving[10] =
     {
         &FlashRed,
         &FlashPink,
         &GrowRed,
-        &JumpPurple};
+        &JumpPurple,
+        &PulseBlue,
+        
+        
+        };
 
 void sleep_cb();
 
