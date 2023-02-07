@@ -89,7 +89,7 @@ PowerOff PoweringOff(&Patterns);
 
 // ----------------------
 
-const uint16_t num_pats_moving = 5; 
+const uint16_t num_pats_moving = 5;
 Pattern *PatsMoving[10] =
     {
         &FlashRed,
