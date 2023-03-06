@@ -69,9 +69,9 @@ Flash FlashPink(&Patterns, Pink);
 Fade FadeAmber(&Patterns, Yellow);
 Fade ChargeDone(&Patterns, Green);
 
-GrowRev GrowRev(&Patterns, )
+GrowRev GrowRev(&Patterns, Red);
 
-Grow GrowRev(&Patterns, Red);
+Grow GrowRed(&Patterns, Red);
 
 Pulse PulseBlue(&Patterns, Blue);
 
