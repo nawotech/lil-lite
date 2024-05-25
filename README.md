@@ -5,6 +5,43 @@ https://nawo.tech/lil-lite/
 
 This repo contains the firmware running on the light. For the PCB design: https://github.com/nawotech/lil-lite-board
 
+## Features
+
+### Selectable Pattern
+
+Choose one of the built in patterns with the button, or create your own and upload using Arduino and the USB-C port.
+
+![patterns-1](https://github.com/nawotech/lil-lite/assets/85331937/29c69c70-7d7b-4aeb-bab9-8ae9f6ae597b)
+
+### Never worry about turning on or off your light again
+
+Lil Lite has a built in light sensor and accelerometer to detect
+
+when you start riding at night (light ON)
+when you park your bike (light OFF)
+
+![riding-1](https://github.com/nawotech/lil-lite/assets/85331937/657fdb17-a6f1-4f3d-ad17-641845974434)
+
+### Easy battery level checking
+
+Never get stuck with a dead light, any time you can see exactly how much battery your light has, including when it turns on
+
+![battery](https://github.com/nawotech/lil-lite/assets/85331937/2d37ac40-ad31-405e-a289-e03c91f4607a)
+
+
+### Charge with USB-C
+
+The future is now, it's time your bike light got with the times :)
+
+![charging](https://github.com/nawotech/lil-lite/assets/85331937/5e90d103-e322-46d9-9860-0727fc346554)
+
+### Easy to mount
+
+The case fits against the range of bike seat posts, and 2 bands sizes are included to fit almost any bike
+
+![mounting-2](https://github.com/nawotech/lil-lite/assets/85331937/0bdb2481-4c56-45c7-818a-b7e8c6105fe8)
+
+
 ## How to use
 ### Mounting to bike
 - 2 bands are included, select the one sized best for your bike seat post
