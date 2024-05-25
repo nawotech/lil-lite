@@ -37,7 +37,7 @@ The future is now, it's time your bike light got with the times :)
 
 ### Easy to mount
 
-The case fits against the range of bike seat posts, and 2 bands sizes are included to fit almost any bike
+The case fits against the range of bike seat posts, uses a standard rubber gasket which comes in sizes to fit almost any seat post!
 
 ![mounting-2](https://github.com/nawotech/lil-lite/assets/85331937/0bdb2481-4c56-45c7-818a-b7e8c6105fe8)
 
