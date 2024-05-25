@@ -1,7 +1,10 @@
 # Lil' Lite
-The fun bike light with big potential
+The World's Funnest Bike Light!
 
 https://nawo.tech/lil-lite/
+
+This repo contains the firmware running on the light
+For the PCB design: 
 
 ## How to use
 ### Mounting to bike
