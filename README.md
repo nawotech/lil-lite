@@ -7,6 +7,17 @@ This repo contains the firmware running on the light. For the PCB design: https:
 
 For 3D printed case: https://www.thingiverse.com/thing:6635754
 
+## Note
+
+This is a work in progress! I uploaded all the files to open source this and will provide build instructions at some point.
+
+## Required Parts
+- PCBA
+- 3D printed case (print in PETG for better water resistance)
+- Rubber o-ring (as bike seat post strap)
+- Battery -
+- Clear epoxy - once PCB and battery are placed in the case- fill the front with clear expoy
+
 ## Features
 
 ### Selectable Pattern
