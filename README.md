@@ -5,6 +5,8 @@ https://nawo.tech/lil-lite/
 
 This repo contains the firmware running on the light. For the PCB design: https://github.com/nawotech/lil-lite-board
 
+For 3D printed case: https://www.thingiverse.com/thing:6635754
+
 ## Features
 
 ### Selectable Pattern
